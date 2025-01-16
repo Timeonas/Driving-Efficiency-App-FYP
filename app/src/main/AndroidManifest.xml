@@ -27,6 +27,11 @@
             android:exported="false">
         </activity>
 
+        <activity
+            android:name=".StartDrive"
+            android:exported="false">
+        </activity>
+
     </application>
 
 </manifest>

@@ -13,3 +13,6 @@ All notable changes to this project will be documented in this file
 
 16/1/25
 - Added a new app icon
+
+16/1/25
+- Added a basic start trip screen, with a button to start the trip and a elapsed time counter
