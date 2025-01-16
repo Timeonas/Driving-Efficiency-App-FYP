@@ -12,7 +12,7 @@ class AppIntro : AppCompatActivity() {
 
         // Add a delay and then start the main activity
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, Test::class.java))
+            startActivity(Intent(this, MainMenu::class.java))
             finish()
         }, 2000) // 2 seconds delay
     }

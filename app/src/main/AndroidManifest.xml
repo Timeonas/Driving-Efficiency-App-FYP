@@ -23,7 +23,7 @@
         </activity>
 
         <activity
-            android:name=".Test"
+            android:name=".MainMenu"
             android:exported="false">
         </activity>
 
