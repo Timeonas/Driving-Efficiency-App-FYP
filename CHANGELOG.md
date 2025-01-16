@@ -10,3 +10,6 @@ All notable changes to this project will be documented in this file
 
 16/1/25
 - Created the main menu, featuring two buttons, one to start a trip and one to view past trips.
+
+16/1/25
+- Added a new app icon
