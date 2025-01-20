@@ -31,3 +31,7 @@ All notable changes to this project will be documented in this file
 - Added a login screen, with a text fields to login with email and password
 - Converted to Android Jetpack ViewModels
 - TODO: Implement Register screen
+
+20/1/25
+- Added a profile screen, so users can sign out, with a default profile picture
+- Fixed a bug where the duration of the trip was not being saved

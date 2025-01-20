@@ -16,7 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.drivingefficiencyapp.databinding.MainMenuActivityBinding
 
 class MainMenuActivity : AppCompatActivity() {
-    private lateinit var binding: MainMenuActivityBinding // View Binding
+    private lateinit var binding: MainMenuActivityBinding //View Binding
     /**
      * Creates the main menu screen and sets up the buttons to start a drive or view past trips.
      *
@@ -39,6 +39,11 @@ class MainMenuActivity : AppCompatActivity() {
 
         binding.viewTripsButton.setOnClickListener {
             val intent = Intent(this, TripsActivity::class.java)
+            startActivity(intent)
+        }
+        //Button to navigate to the profile page activity
+        binding.profileButton.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
             startActivity(intent)
         }
     }

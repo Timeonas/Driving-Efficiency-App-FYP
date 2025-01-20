@@ -9,7 +9,7 @@
         android:id="@+id/startDriveButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Start Drive"
+        android:text="@string/start_drive"
         android:padding="20dp"
         android:textSize="18sp"
         app:layout_constraintTop_toTopOf="parent"
@@ -23,12 +23,23 @@
         android:id="@+id/viewTripsButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="View Past Trips"
+        android:text="@string/past_trips"
         android:padding="20dp"
         android:textSize="18sp"
         app:layout_constraintTop_toBottomOf="@id/startDriveButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
+
+    <Button
+        android:id="@+id/profileButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/profile"
+        android:padding="12dp"
+        android:textSize="14sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

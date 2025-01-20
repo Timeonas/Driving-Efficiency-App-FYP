@@ -12,7 +12,7 @@ data class Trip(
     val date: String,
     val duration: String
 ) {
-    // Companion object to store all trips in memory, can be accessed statically from Trip class
+    //Companion object to store all trips in memory, can be accessed statically from Trip class
     companion object {
         /**
          * Static list to store all trips in memory.

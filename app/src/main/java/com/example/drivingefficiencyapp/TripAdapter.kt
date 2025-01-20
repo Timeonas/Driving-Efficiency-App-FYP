@@ -22,7 +22,7 @@ class TripAdapter(private val trips: List<Trip>) :
         class TripViewHolder(private val binding: TripItemBinding) : RecyclerView.ViewHolder(binding.root) {
             fun bind(trip: Trip) {
                 binding.tripDate.text = trip.date
-                binding.root.context.getString(R.string.trip_duration_format, trip.duration)
+                binding.tripDuration.text = binding.root.context.getString(R.string.trip_duration_format, trip.duration)
             }
         }
 
