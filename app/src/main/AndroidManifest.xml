@@ -36,6 +36,11 @@
             android:name=".TripsActivity"
             android:exported="false">
         </activity>
+
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false">
+        </activity>
     </application>
 
 </manifest>

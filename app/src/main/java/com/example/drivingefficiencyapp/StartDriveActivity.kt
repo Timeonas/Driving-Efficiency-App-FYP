@@ -12,16 +12,13 @@ package com.example.drivingefficiencyapp
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.widget.Button
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
 import java.text.SimpleDateFormat
 import java.util.*
 
 class StartDriveActivity : AppCompatActivity() {
-    //Declare the late initialization variables for text view
-    private lateinit var timerTextView: TextView
-    private lateinit var dateTextView: TextView
+    private lateinit var binding: StartDriveActivityBinding // View Binding
 
     //Variable to store the start time of the drive
     private var startTime: Long = 0
@@ -52,7 +49,7 @@ class StartDriveActivity : AppCompatActivity() {
                 seconds % 60)
 
             //Set the time string in the timer text view
-            timerTextView.text = timeString
+            binding.timerTextView.text = timeString
 
             //If the timer is running, delay the timerRunnable object by 1 second
             // (update the timer once per second)
@@ -71,18 +68,13 @@ class StartDriveActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)//Re-create the saved state
         supportActionBar?.hide()//Hid the action bar which references the app name
-        setContentView(R.layout.start_drive_activity)//Set the layout using start_drive_activity.xml layout
 
-        //Using the Text view IDs from start_drive_activity.xml, set the date and timer text views variables
-        timerTextView = findViewById(R.id.timerTextView)
-        dateTextView = findViewById(R.id.dateTextView)
-
-        //Parse the endDriveButton from the start_drive_activity.xml layout
-        val endDriveButton = findViewById<Button>(R.id.endDriveButton)
+        binding = StartDriveActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)//Set the layout using start_drive_activity.xml layout
 
         //Set current date in a variable and display it as the text in the dateTextView
         val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-        dateTextView.text = dateFormat.format(Date())
+        binding.dateTextView.text = dateFormat.format(Date())
 
         //Start timer and start the isRunning boolean to true
         startTime = System.currentTimeMillis()
@@ -91,7 +83,7 @@ class StartDriveActivity : AppCompatActivity() {
         handler.post(timerRunnable)
 
         //Once the user clicks the endDriveButton, the activity is finished and the trip data is saved
-        endDriveButton.setOnClickListener {
+        binding.endDriveButton.setOnClickListener {
             // Get current date and elapsed time
             val date = dateFormat.format(Date())
 

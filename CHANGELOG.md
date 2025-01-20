@@ -25,3 +25,9 @@ All notable changes to this project will be documented in this file
 - Added additional functionality to the start trip, now trips are saved in memory to the view trips 
   screen
 - Linting fixes
+
+20/1/25
+- Added Firebase to the project, with a basic implementation of Firebase Authentication
+- Added a login screen, with a text fields to login with email and password
+- Converted to Android Jetpack ViewModels
+- TODO: Implement Register screen

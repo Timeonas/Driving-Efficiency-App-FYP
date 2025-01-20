@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "981359400365",
+    "project_id": "driving-efficiency-app",
+    "storage_bucket": "driving-efficiency-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:981359400365:android:affbe1ff32abbd42117d24",
+        "android_client_info": {
+          "package_name": "com.example.drivingefficiencyapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMQrXC156B3fpbM6Yr7JHQs12-rC83PyU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -2,4 +2,9 @@
     <string name="app_name">Driving Efficiency App</string>
     <string name="car_icon_description">Car icon for FYP app logo</string>
     <string name="app_subtext_name">FYP Project</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="trip_duration_format">Duration: %s</string>
 </resources>

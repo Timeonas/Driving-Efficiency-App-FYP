@@ -8,23 +8,22 @@ package com.example.drivingefficiencyapp
  */
 
 import android.view.*
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.drivingefficiencyapp.databinding.TripItemBinding
 
 class TripAdapter(private val trips: List<Trip>) :
     //Adapter for the RecyclerView, takes in a list of trips as a parameter
     RecyclerView.Adapter<TripAdapter.TripViewHolder>() {
-
         /**
          * ViewHolder class for holding the views of a single trip item.
          *
-         * @property dateText TextView that displays the trip date
-         * @property durationText TextView that displays the trip duration
+         * @property binding The view binding for the trip item layout
          */
-        class TripViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            //TextViews for the date and duration of the trip from the stored trip_item.xml layout
-            val dateText: TextView = itemView.findViewById(R.id.tripDate)
-            val durationText: TextView = itemView.findViewById(R.id.tripDuration)
+        class TripViewHolder(private val binding: TripItemBinding) : RecyclerView.ViewHolder(binding.root) {
+            fun bind(trip: Trip) {
+                binding.tripDate.text = trip.date
+                binding.root.context.getString(R.string.trip_duration_format, trip.duration)
+            }
         }
 
         /**
@@ -35,11 +34,12 @@ class TripAdapter(private val trips: List<Trip>) :
          * @return A new TripViewHolder
          */
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
-            //Inflates the trip_item.xml layout for each item in the RecyclerView
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.trip_item, parent, false)
-            //Returns a new TripViewHolder with the inflated view
-            return TripViewHolder(view)
+            val binding = TripItemBinding.inflate(
+                LayoutInflater.from(parent.context),
+                parent,
+                false
+            )
+            return TripViewHolder(binding)
         }
 
         /**
@@ -49,10 +49,7 @@ class TripAdapter(private val trips: List<Trip>) :
          * @param position The position of the item in the trips list
          */
         override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
-            //Parse the trip data and set the date and duration in the TextViews
-            val trip = trips[position]
-            holder.dateText.text = trip.date
-            holder.durationText.text = "Duration: ${trip.duration}"
+            holder.bind(trips[position])
         }
 
         /**

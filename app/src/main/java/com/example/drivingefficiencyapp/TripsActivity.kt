@@ -12,11 +12,14 @@ package com.example.drivingefficiencyapp
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.*
+import com.example.drivingefficiencyapp.databinding.TripsActivityBinding
 
 class TripsActivity : AppCompatActivity() {
     //Views that need to be accessed throughout the activity lifecycle
     private lateinit var recyclerView: RecyclerView
     private lateinit var tripAdapter: TripAdapter
+
+    private lateinit var binding: TripsActivityBinding // View Binding
 
     /**
      * Initializes the activity, sets up the RecyclerView, and loads trip data.
@@ -27,10 +30,12 @@ class TripsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState) //Re-create the saved state
         supportActionBar?.hide() //Hid the action bar which references the app name
-        setContentView(R.layout.trips_activity) //Set the layout using trips_activity.xml layout
+
+        binding = TripsActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root) //Set the layout using trips_activity.xml view binding
 
         //Set up the RecyclerView to display the list of trips
-        recyclerView = findViewById(R.id.tripsRecyclerView)
+        recyclerView = binding.tripsRecyclerView
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         //Create and set the adapter for the RecyclerView, based on the list of trips saved in memory

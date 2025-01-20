@@ -13,8 +13,11 @@ package com.example.drivingefficiencyapp
 import android.content.Intent
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.databinding.AppIntroActivityBinding
+import com.google.firebase.auth.FirebaseAuth
 
 class AppIntroActivity : AppCompatActivity() {
+    private lateinit var binding: AppIntroActivityBinding // View Binding
     /**
      * Creates the splash screen and sets up transition to main menu.
      *
@@ -24,11 +27,21 @@ class AppIntroActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState) //Re-create the saved state
         supportActionBar?.hide() //Hid the action bar which references the app name
-        setContentView(R.layout.app_intro_activity) //Set the layout using app_intro.xml layout
 
-        //Delay for 2 seconds before starting the MainMenuActivity and finishing the current activity
+        binding = AppIntroActivityBinding.inflate(layoutInflater)
+
+        setContentView(binding.root) //Set the layout using app_intro_activity.xml view binding
+
+        //Delay for 2 seconds before starting the MainMenuActivity or login screen
         Handler(Looper.getMainLooper()).postDelayed({
-            startActivity(Intent(this, MainMenuActivity::class.java))
+            // Check if user is signed in
+            val user = FirebaseAuth.getInstance().currentUser
+            val intent = if (user != null) {
+                Intent(this, MainMenuActivity::class.java)
+            } else {
+                Intent(this, LoginActivity::class.java)
+            }
+            startActivity(intent)
             finish()
         }, 2000)
     }
