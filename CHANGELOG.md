@@ -18,4 +18,10 @@ All notable changes to this project will be documented in this file
 - Added a basic start trip screen, with a button to start the trip and a elapsed time counter
 
 17/1/25
-- Added a basic trip summary screen, with sample trips. Documentation and comments added to all Kotlin files.
+- Added a basic trip summary screen, with sample trips. Documentation and comments added to all 
+  Kotlin files.
+
+20/1/25
+- Added additional functionality to the start trip, now trips are saved in memory to the view trips 
+  screen
+- Linting fixes

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Driving Efficiency App</string>
+    <string name="car_icon_description">Car icon for FYP app logo</string>
+    <string name="app_subtext_name">FYP Project</string>
 </resources>

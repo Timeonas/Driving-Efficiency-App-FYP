@@ -4,7 +4,6 @@ package com.example.drivingefficiencyapp
  * Activity that displays a list of all recorded driving trips.
  *
  * This activity uses a RecyclerView to display trip data in a scrollable list format.
- * Currently using sample data, but will be updated to use actual trip records.
  *
  * @author Tim Samoska
  * @since January 17, 2025
@@ -34,15 +33,8 @@ class TripsActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.tripsRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        //Sample data, will replace with actual trip data later
-        val sampleTrips = listOf(
-            Trip("January 17, 2025", "45 minutes"),
-            Trip("January 16, 2025", "30 minutes"),
-            Trip("January 15, 2025", "1 hour 15 minutes")
-        )
-
-        //Create and set the adapter for the RecyclerView
-        tripAdapter = TripAdapter(sampleTrips)
+        //Create and set the adapter for the RecyclerView, based on the list of trips saved in memory
+        tripAdapter = TripAdapter(Trip.tripsList)
         recyclerView.adapter = tripAdapter
     }
 }

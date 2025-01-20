@@ -46,7 +46,7 @@ class StartDriveActivity : AppCompatActivity() {
             val hours = minutes / 60
 
             //Format the time string to display in the timer text view
-            val timeString = String.format("%02d:%02d:%02d",
+            val timeString = String.format(Locale.getDefault(),"%02d:%02d:%02d",
                 hours,
                 minutes % 60,
                 seconds % 60)
@@ -54,7 +54,8 @@ class StartDriveActivity : AppCompatActivity() {
             //Set the time string in the timer text view
             timerTextView.text = timeString
 
-            //If the timer is running, delay the timerRunnable object by 1 second (update the timer once per second)
+            //If the timer is running, delay the timerRunnable object by 1 second
+            // (update the timer once per second)
             if (isRunning) {
                 handler.postDelayed(this, 1000)
             }
@@ -89,8 +90,35 @@ class StartDriveActivity : AppCompatActivity() {
         //Post the timerRunnable object to the handler
         handler.post(timerRunnable)
 
-        //Once the user clicks the endDriveButton, the activity is finished and onDestroy is called
+        //Once the user clicks the endDriveButton, the activity is finished and the trip data is saved
         endDriveButton.setOnClickListener {
+            // Get current date and elapsed time
+            val date = dateFormat.format(Date())
+
+            // Calculate final duration to save to the trip activity screen
+            val elapsedTime = System.currentTimeMillis() - startTime
+            val seconds = (elapsedTime / 1000).toInt()
+            val minutes = seconds / 60
+            val hours = minutes / 60
+            // Format the duration string based on the hours, minutes, and seconds using Kotlin's
+            // when expression
+            val duration = when {
+                // if the hours are greater than 0, format the duration string with hours and
+                // minutes, and seconds if applicable
+                hours > 0 -> {
+                    val mins = minutes % 60
+                    if (mins > 0) "$hours hours $mins minutes" else "$hours hours"
+                }
+                // if hours are 0, just format the minutes
+                minutes > 0 -> "$minutes minutes"
+                // if minutes are 0, just format the seconds
+                else -> "$seconds seconds"
+            }
+
+            // Create and save new trip
+            val trip = Trip(date, duration)
+            Trip.tripsList.add(trip)
+
             finish() //Returns to previous activity (MainMenuActivity)
         }
     }
