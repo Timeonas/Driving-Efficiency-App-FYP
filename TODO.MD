@@ -1,6 +1,6 @@
 Skeleton for App:
 -Implement a cloud-based database to store trips
--Reset Password functionality
+- ~~Reset Password functionality~~
 -Ability to add a profile picture to the profile screen
 -Store profile picture in Firebase Storage, and retrieve it when a user signs in
 
@@ -15,3 +15,6 @@ Appearance:
 -Improve the appearance of the app, with a better color scheme and more modern design
 -Add animations to the app, such as when a trip starts or ends
 -Come up with an app name
+
+Project:
+-Sort the Kotlin files into different files and folders to make it more organized

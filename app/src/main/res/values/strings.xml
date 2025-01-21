@@ -15,4 +15,8 @@
     <string name="confirm_password">Confirm Password</string>
     <string name="create_account">Create Account</string>
     <string name="back_to_login">Back to Login</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="reset_instructions">Enter your email address and we\'ll send you instructions to reset your password.</string>
+    <string name="send_reset_link">Send Reset Link</string>
+    <string name="forgot_password">Forgot Password?</string>
 </resources>

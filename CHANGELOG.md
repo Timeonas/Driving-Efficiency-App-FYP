@@ -44,3 +44,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Implemented Google Maps API functionality, ready to implement maps in the app
+
+21/1/25
+- Added reset password functionality to the app.
