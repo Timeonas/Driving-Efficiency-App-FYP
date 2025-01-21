@@ -12,4 +12,7 @@
     <string name="start_drive">Start Drive</string>
     <string name="past_trips">Past Trips</string>
     <string name="profile">Profile</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="create_account">Create Account</string>
+    <string name="back_to_login">Back to Login</string>
 </resources>

@@ -35,3 +35,6 @@ All notable changes to this project will be documented in this file
 20/1/25
 - Added a profile screen, so users can sign out, with a default profile picture
 - Fixed a bug where the duration of the trip was not being saved
+
+21/1/25
+- Added a register screen that allows users to register with email and password on Firebase

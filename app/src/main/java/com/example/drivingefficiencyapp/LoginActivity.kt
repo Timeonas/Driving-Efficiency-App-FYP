@@ -43,6 +43,12 @@ class LoginActivity : AppCompatActivity() {
             val password = binding.passwordEditText.text.toString()
             signIn(email, password)
         }
+
+        //Set up registration link
+        binding.registerButton.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
+
     }
 
     /**
