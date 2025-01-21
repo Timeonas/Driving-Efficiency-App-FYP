@@ -38,3 +38,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Added a register screen that allows users to register with email and password on Firebase
+
+21/1/25
+- Added a TODO file, to keep track of future features and improvements
