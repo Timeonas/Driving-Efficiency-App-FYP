@@ -41,3 +41,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Added a TODO file, to keep track of future features and improvements
+
+21/1/25
+- Implemented Google Maps API functionality, ready to implement maps in the app

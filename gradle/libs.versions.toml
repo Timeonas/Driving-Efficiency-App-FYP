@@ -8,6 +8,8 @@ espressoCore = "3.6.1"
 appcompat = "1.7.0"
 material = "1.12.0"
 firebase-bom = "33.8.0"
+gms-maps = "19.0.0"
+gms-location = "21.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -18,6 +20,8 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom"}
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+google-android-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "gms-maps" }
+google-android-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "gms-location" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
