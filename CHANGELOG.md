@@ -50,3 +50,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Sorted the Kotlin files into different files and folders to make it more organized
+
+21/1/25
+- Added a basic map view to the app, showing the user's current location when a trip starts
