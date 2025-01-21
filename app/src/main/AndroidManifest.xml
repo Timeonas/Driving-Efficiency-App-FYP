@@ -19,7 +19,7 @@
             android:value="${MAPS_API_KEY}"/>
 
         <activity
-            android:name=".AppIntroActivity"
+            android:name=".ui.AppIntroActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,37 +28,37 @@
         </activity>
 
         <activity
-            android:name=".MainMenuActivity"
+            android:name=".ui.MainMenuActivity"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".StartDriveActivity"
+            android:name=".ui.StartDriveActivity"
             android:exported="false">
         </activity>
         
         <activity
-            android:name=".TripsActivity"
+            android:name=".trip.TripsActivity"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".auth.LoginActivity"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".ProfileActivity"
+            android:name=".ui.ProfileActivity"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".auth.RegisterActivity"
             android:exported="false">
         </activity>
 
         <activity
-            android:name=".ForgotPasswordActivity"
+            android:name=".auth.ForgotPasswordActivity"
             android:exported="false">
         </activity>
     </application>

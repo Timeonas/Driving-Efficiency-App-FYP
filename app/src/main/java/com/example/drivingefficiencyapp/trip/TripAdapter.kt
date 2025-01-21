@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.trip
 
 /**
  * Adapter for translating the data to how it is displayed in the RecyclerView.
@@ -9,6 +9,7 @@ package com.example.drivingefficiencyapp
 
 import android.view.*
 import androidx.recyclerview.widget.RecyclerView
+import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.TripItemBinding
 
 class TripAdapter(private val trips: List<Trip>) :

@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.trip
 
 /**
  * Activity that displays a list of all recorded driving trips.

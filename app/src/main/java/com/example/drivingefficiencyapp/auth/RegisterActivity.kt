@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.auth
 
 /**
  * Registration screen activity for the Driving Efficiency App.
@@ -14,6 +14,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.ui.MainMenuActivity
 import com.example.drivingefficiencyapp.databinding.RegisterActivityBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException

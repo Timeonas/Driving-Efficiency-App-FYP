@@ -47,3 +47,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Added reset password functionality to the app.
+
+21/1/25
+- Sorted the Kotlin files into different files and folders to make it more organized

@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.ui
 
 /**
  * Main Menu activity for the Driving Efficiency App.
@@ -14,6 +14,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.drivingefficiencyapp.databinding.MainMenuActivityBinding
+import com.example.drivingefficiencyapp.trip.TripsActivity
 
 class MainMenuActivity : AppCompatActivity() {
     private lateinit var binding: MainMenuActivityBinding //View Binding

@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.trip
 
 /**
  * Data class representing a trip with a date and duration.

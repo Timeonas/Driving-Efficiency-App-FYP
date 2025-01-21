@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.auth
 
 /**
  * Forgot password screen activity for the Driving Efficiency App.

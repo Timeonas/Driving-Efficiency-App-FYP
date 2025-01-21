@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.ui
 
 /**
  * Intro screen activity for the Driving Efficiency App.
@@ -13,6 +13,7 @@ package com.example.drivingefficiencyapp
 import android.content.Intent
 import android.os.*
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.auth.LoginActivity
 import com.example.drivingefficiencyapp.databinding.AppIntroActivityBinding
 import com.google.firebase.auth.FirebaseAuth
 

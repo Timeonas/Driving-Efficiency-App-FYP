@@ -17,5 +17,5 @@ Appearance:
 - Come up with an app name
 
 Project:
-- Sort the Kotlin files into different files and folders to make it more organized
+- ~~Sort the Kotlin files into different files and folders to make it more organized~~
 - Develop the README.md, with instructions on how to build and run the app

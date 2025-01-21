@@ -1,8 +1,9 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.ui
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.auth.LoginActivity
 import com.example.drivingefficiencyapp.databinding.ProfileActivityBinding
 import com.google.firebase.auth.FirebaseAuth
 

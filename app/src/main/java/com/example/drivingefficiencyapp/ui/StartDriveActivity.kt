@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.ui
 
 /**
  * The start drive activity for when a user starts a new drive (trip). Right now, it displays
@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.trip.Trip
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
 import java.text.SimpleDateFormat
 import java.util.*
