@@ -27,23 +27,25 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import java.text.SimpleDateFormat
 import java.util.*
 
 class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
-    private lateinit var binding: StartDriveActivityBinding // View Binding
-    private lateinit var fusedLocationClient: FusedLocationProviderClient // Location services
-    private lateinit var locationCallback: LocationCallback // Callback for location updates
-    private lateinit var googleMap: GoogleMap // Google Maps instance
+    private lateinit var binding: StartDriveActivityBinding //View Binding
+    private lateinit var fusedLocationClient: FusedLocationProviderClient //Location services
+    private lateinit var locationCallback: LocationCallback //Callback for location updates
+    private var googleMap: GoogleMap? = null
+    private var pendingLocation: LatLng? = null
 
-    // Variables to store the start time and manage the timer
+    //Variables to store the start time and manage the timer
     private var startTime: Long = 0
     private val handler = Handler(Looper.getMainLooper())
     private var isRunning = false
 
     companion object {
-        // Constants for location permissions and update intervals
+        //Constants for location permissions and update intervals
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
         private const val UPDATE_INTERVAL = 5000L // 5 seconds
         private const val FASTEST_INTERVAL = 3000L // 3 seconds
@@ -92,8 +94,31 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = StartDriveActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Initialize location services
+        //Initialize location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        //Set up location callback
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    val currentLatLng = LatLng(location.latitude, location.longitude)
+                    //Store location if map isn't ready yet
+                    if (googleMap == null) {
+                        pendingLocation = currentLatLng
+                    } else {
+                        val cameraPosition = CameraPosition.Builder()
+                            .target(currentLatLng)
+                            .zoom(18f)
+                            .tilt(60f)
+                            .bearing(0f)
+                            .build()
+
+                        //Update map if it's ready
+                        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                    }
+                }
+            }
+        }
 
         // Set up the map fragment
         val mapFragment = supportFragmentManager
@@ -114,7 +139,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     val currentLatLng = LatLng(location.latitude, location.longitude)
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
+                    googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
                 }
             }
         }
@@ -130,8 +155,8 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
 
             val duration = when {
                 hours > 0 -> {
-                    val mins = minutes % 60
-                    if (mins > 0) "$hours hours $mins minutes" else "$hours hours"
+                    val tempMinutes = minutes % 60
+                    if (tempMinutes > 0) "$hours hours $tempMinutes minutes" else "$hours hours"
                 }
                 minutes > 0 -> "$minutes minutes"
                 else -> "$seconds seconds"
@@ -160,14 +185,47 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        //Enable tilting gesture
+        googleMap?.uiSettings?.isTiltGesturesEnabled = true
         if (hasLocationPermission()) {
             if (ActivityCompat.checkSelfPermission(
                     this,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                googleMap.isMyLocationEnabled = true
-                googleMap.uiSettings.isMyLocationButtonEnabled = true
+                googleMap?.isMyLocationEnabled = true
+                googleMap?.uiSettings?.isMyLocationButtonEnabled = true
+                googleMap?.uiSettings?.isTiltGesturesEnabled = true
+
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        val currentLatLng = LatLng(it.latitude, it.longitude)
+
+                        //Set initial camera position with tilt
+                        val initialPosition = CameraPosition.Builder()
+                            .target(currentLatLng)
+                            .zoom(18f)         // Increased zoom for better 3D effect
+                            .tilt(60f)         // More pronounced tilt
+                            .bearing(0f)       // Optional: sets the orientation
+                            .build()
+
+                        // Use moveCamera instead of animateCamera for initial position
+                        googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(initialPosition))
+                    }
+                }
+
+                pendingLocation?.let { location ->
+                    //Create camera position with tilt
+                    val cameraPosition = CameraPosition.Builder()
+                        .target(location)
+                        .zoom(35f)
+                        .tilt(60f)
+                        .bearing(0f)
+                        .build()
+
+                    googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                    pendingLocation = null
+                }
             }
         }
     }
@@ -233,11 +291,9 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            val locationRequest = LocationRequest.create().apply {
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-                interval = UPDATE_INTERVAL
-                fastestInterval = FASTEST_INTERVAL
-            }
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(FASTEST_INTERVAL)
+                .build()
 
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,

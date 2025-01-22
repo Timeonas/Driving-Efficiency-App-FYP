@@ -43,7 +43,7 @@ class ProfileActivity : AppCompatActivity() {
 
         //Set up sign out button
         binding.signOutButton.setOnClickListener {
-            auth.signOut() //Firebase signout
+            auth.signOut() //Firebase sign out
             //Go to login screen
             val intent = Intent(this, LoginActivity::class.java)
             //Clear the back stack so user can't go back after signing out
