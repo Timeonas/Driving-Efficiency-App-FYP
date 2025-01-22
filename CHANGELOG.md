@@ -53,3 +53,6 @@ All notable changes to this project will be documented in this file
 
 21/1/25
 - Added a basic map view to the app, showing the user's current location when a trip starts
+
+22/1/25
+- Implemented map tilting and fixed app crash on consecutive trip starts.
