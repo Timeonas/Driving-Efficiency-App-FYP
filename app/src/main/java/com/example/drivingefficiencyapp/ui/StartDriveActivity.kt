@@ -12,6 +12,10 @@ package com.example.drivingefficiencyapp.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,23 +36,22 @@ import com.google.android.gms.maps.model.LatLng
 import java.text.SimpleDateFormat
 import java.util.*
 
-class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
+class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListener {
     private lateinit var binding: StartDriveActivityBinding //View Binding
     private lateinit var fusedLocationClient: FusedLocationProviderClient //Location services
     private lateinit var locationCallback: LocationCallback //Callback for location updates
-    private var googleMap: GoogleMap? = null
-    private var pendingLocation: LatLng? = null
-
-    //Variables to store the start time and manage the timer
-    private var startTime: Long = 0
-    private val handler = Handler(Looper.getMainLooper())
-    private var isRunning = false
+    private lateinit var sensorManager: SensorManager //Device sensor manager
+    private var googleMap: GoogleMap? = null //Google Maps instance
+    private var pendingLocation: LatLng? = null //Stored location when map isn't ready
+    private var currentBearing: Float = 0f //Current device orientation
+    private var startTime: Long = 0 //Trip start time
+    private val handler = Handler(Looper.getMainLooper()) //Handler for timer updates
+    private var isRunning = false //Timer state
 
     companion object {
-        //Constants for location permissions and update intervals
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
-        private const val UPDATE_INTERVAL = 5000L // 5 seconds
-        private const val FASTEST_INTERVAL = 3000L // 3 seconds
+        private const val UPDATE_INTERVAL = 5000L //5 seconds
+        private const val FASTEST_INTERVAL = 3000L //3 seconds
     }
 
     /**
@@ -94,15 +97,15 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = StartDriveActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //Initialize location services
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        //Set up location callback
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     val currentLatLng = LatLng(location.latitude, location.longitude)
-                    //Store location if map isn't ready yet
+
                     if (googleMap == null) {
                         pendingLocation = currentLatLng
                     } else {
@@ -110,41 +113,26 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
                             .target(currentLatLng)
                             .zoom(18f)
                             .tilt(60f)
-                            .bearing(0f)
+                            .bearing(currentBearing)
                             .build()
 
-                        //Update map if it's ready
                         googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
                     }
                 }
             }
         }
 
-        // Set up the map fragment
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.mapView) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Set current date in date text view
         val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
         binding.dateTextView.text = dateFormat.format(Date())
 
-        // Start timer for tracking drive duration
         startTime = System.currentTimeMillis()
         isRunning = true
         handler.post(timerRunnable)
 
-        // Set up callback for receiving location updates
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.lastLocation?.let { location ->
-                    val currentLatLng = LatLng(location.latitude, location.longitude)
-                    googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17f))
-                }
-            }
-        }
-
-        // Handle end drive button click
         binding.endDriveButton.setOnClickListener {
             val date = dateFormat.format(Date())
 
@@ -169,7 +157,6 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
             finish()
         }
 
-        // Check and request location permissions if needed
         if (hasLocationPermission()) {
             startLocationUpdates()
         } else {
@@ -178,14 +165,13 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Callback for when the Google Map is ready to be used.
-     * Enables the user's location on the map if permission is granted.
+     * Callback for when the Google Map is ready.
+     * Sets up map UI and initial camera position.
      *
      * @param map The Google Map instance that is ready for use
      */
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        //Enable tilting gesture
         googleMap?.uiSettings?.isTiltGesturesEnabled = true
         if (hasLocationPermission()) {
             if (ActivityCompat.checkSelfPermission(
@@ -200,27 +186,23 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                     location?.let {
                         val currentLatLng = LatLng(it.latitude, it.longitude)
-
-                        //Set initial camera position with tilt
                         val initialPosition = CameraPosition.Builder()
                             .target(currentLatLng)
-                            .zoom(18f)         // Increased zoom for better 3D effect
-                            .tilt(60f)         // More pronounced tilt
-                            .bearing(0f)       // Optional: sets the orientation
+                            .zoom(18f)
+                            .tilt(60f)
+                            .bearing(currentBearing)
                             .build()
 
-                        // Use moveCamera instead of animateCamera for initial position
                         googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(initialPosition))
                     }
                 }
 
                 pendingLocation?.let { location ->
-                    //Create camera position with tilt
                     val cameraPosition = CameraPosition.Builder()
                         .target(location)
-                        .zoom(35f)
+                        .zoom(18f)
                         .tilt(60f)
-                        .bearing(0f)
+                        .bearing(currentBearing)
                         .build()
 
                     googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
@@ -231,7 +213,67 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Checks if the app has been granted location permission.
+     * Registers sensor listeners when activity resumes.
+     */
+    override fun onResume() {
+        super.onResume()
+        // Register the sensor listener when the activity resumes
+        sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION)?.let { orientationSensor ->
+            sensorManager.registerListener(
+                this,
+                orientationSensor,
+                SensorManager.SENSOR_DELAY_GAME
+            )
+        }
+    }
+
+    /**
+     * Unregisters sensor listeners when activity pauses.
+     */
+    override fun onPause() {
+        super.onPause()
+        // Unregister the sensor listener when the activity is paused
+        sensorManager.unregisterListener(this)
+    }
+
+    /**
+     * Handles sensor value changes, particularly device orientation.
+     * Updates the map camera bearing to match device orientation.
+     *
+     * @param event The sensor event containing new sensor values
+     */
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
+            currentBearing = event.values[0] // Azimuth value (bearing)
+
+            // Update camera bearing if map and current location are available
+            googleMap?.let { map ->
+                pendingLocation?.let { location ->
+                    val cameraPosition = CameraPosition.Builder()
+                        .target(location)
+                        .zoom(18f)
+                        .tilt(60f)
+                        .bearing(currentBearing)
+                        .build()
+
+                    map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                }
+            }
+        }
+    }
+
+    /**
+     * Handles changes in sensor accuracy.
+     *
+     * @param sensor The sensor whose accuracy changed
+     * @param accuracy The new accuracy value
+     */
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Handle accuracy changes if needed
+    }
+
+    /**
+     * Checks if the app has location permission.
      *
      * @return Boolean indicating if location permission is granted
      */
@@ -254,9 +296,9 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Handles the result of the permission request.
+     * Handles the result of permission requests.
      *
-     * @param requestCode The code that was used to request the permission
+     * @param requestCode The code used to request the permission
      * @param permissions The requested permissions
      * @param grantResults The grant results for the corresponding permissions
      */
@@ -282,8 +324,8 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Starts receiving location updates if permission is granted.
-     * Updates occur every UPDATE_INTERVAL milliseconds.
+     * Starts location updates if permission is granted.
+     * Updates occur according to UPDATE_INTERVAL and FASTEST_INTERVAL constants.
      */
     private fun startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(
@@ -304,7 +346,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     /**
-     * Stops receiving location updates.
+     * Stops location updates.
      */
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
@@ -312,12 +354,13 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback {
 
     /**
      * Cleans up resources when the activity is destroyed.
-     * Stops the timer and location updates.
+     * Stops the timer, location updates, and sensor listeners.
      */
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
         handler.removeCallbacks(timerRunnable)
         stopLocationUpdates()
+        sensorManager.unregisterListener(this)
     }
 }

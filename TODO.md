@@ -8,10 +8,11 @@ Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
 - Parse basic information from the user's phone, such as the current speed, and display it on the screen
 - ~~Tilt the map view so its in 3d mode~~
-- Orient the map view so that it is always facing the direction the user is driving
+- ~~Orient the map view so that it is always facing the direction the user is driving~~
 - Implement a trip summary screen that shows the user's trip information, such as the distance traveled, 
 the time taken, and the average speed
-- Add icon on map to show the user's current location
+- ~~Add icon on map to show the user's current location~~
+- Improve the orientation, okay for now
 
 Appearance:
 - Better App Logo
@@ -23,6 +24,7 @@ Project:
 - ~~Sort the Kotlin files into different files and folders to make it more organized~~
 - Develop the README.md, with instructions on how to build and run the app
 - Fix linting issues
+- Refactor StartDriveActivity.kt to reduce code repetition
 
 Bugs:
 - ~~Fix the bug where the app crashes when the user tries to start a trip a second time back to back~~
