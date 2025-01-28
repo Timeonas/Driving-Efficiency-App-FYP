@@ -56,3 +56,6 @@ All notable changes to this project will be documented in this file
 
 22/1/25
 - Implemented map tilting and fixed app crash on consecutive trip starts.
+
+26/1/25
+- Improved map view orientation, so that it is always facing the direction the user is driving
