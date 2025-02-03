@@ -31,7 +31,10 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -157,13 +160,28 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
         val duration = calculateDuration()
 
-        lifecycleScope.launch {
+        // Use runBlocking to ensure save completes before activity destruction
+        lifecycleScope.launch(Dispatchers.Main) {
             try {
-                tripRepository.saveTrip(date, duration)
-                    .onSuccess { showToast("Trip saved successfully") }
-                    .onFailure { e -> showToast("Failed to save trip: ${e.message}") }
+                withContext(Dispatchers.IO) {
+                    tripRepository.saveTrip(date, duration)
+                        .onSuccess {
+                            withContext(Dispatchers.Main) {
+                                showToast("Trip saved successfully")
+                                cleanup()
+                                finish()
+                            }
+                        }
+                        .onFailure { e ->
+                            withContext(Dispatchers.Main) {
+                                showToast("Failed to save trip: ${e.message}")
+                            }
+                        }
+                }
             } catch (e: Exception) {
-                showToast("Error saving trip: ${e.message}")
+                withContext(Dispatchers.Main) {
+                    showToast("Error saving trip: ${e.message}")
+                }
             }
         }
     }

@@ -39,7 +39,9 @@
 ## 3/2/25
 - Reformatted Changelog
 - Implemented Firestore to store trips
-- Trips now load from Firestore
 - Created TripRepository to handle Firestore operations
 - Fixed bug where location was not working on some devices
+- Offline functionality added to the app, so that trips are cached locally if the user is offline
 - Added constant notification when a trip starts
+- Refactored StartDriveActivity.kt to reduce code repetition
+- Fixed bug where first trip was not being saved

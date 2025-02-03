@@ -31,5 +31,5 @@ Project:
 
 Bugs:
 - ~~Fix the bug where the app crashes when the user tries to start a trip a second time back to back~~
-- Sometimes on first instance of saving a trip, error job cancelled
+- ~~Sometimes on first instance of saving a trip, error job cancelle~~d
 - ~~Sometimes location does not work on my phone~~
