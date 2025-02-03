@@ -23,9 +23,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
-import com.example.drivingefficiencyapp.trip.Trip
+import com.example.drivingefficiencyapp.trip.TripRepository
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -33,6 +34,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -47,6 +49,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
     private var startTime: Long = 0 //Trip start time
     private val handler = Handler(Looper.getMainLooper()) //Handler for timer updates
     private var isRunning = false //Timer state
+    private val tripRepository = TripRepository()
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
@@ -116,7 +119,11 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                             .bearing(currentBearing)
                             .build()
 
-                        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                        googleMap?.animateCamera(
+                            CameraUpdateFactory.newCameraPosition(
+                                cameraPosition
+                            )
+                        )
                     }
                 }
             }
@@ -133,6 +140,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         isRunning = true
         handler.post(timerRunnable)
 
+
         binding.endDriveButton.setOnClickListener {
             val date = dateFormat.format(Date())
 
@@ -146,24 +154,42 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                     val tempMinutes = minutes % 60
                     if (tempMinutes > 0) "$hours hours $tempMinutes minutes" else "$hours hours"
                 }
+
                 minutes > 0 -> "$minutes minutes"
                 else -> "$seconds seconds"
             }
 
-            val trip = Trip(date, duration)
-            Trip.tripsList.add(trip)
+            // Save trip to cloud
+            lifecycleScope.launch {
+                try {
+                    tripRepository.saveTrip(date, duration)
+                        .onSuccess {
+                            Toast.makeText(
+                                this@StartDriveActivity,
+                                "Trip saved successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        .onFailure { exception ->
+                            Toast.makeText(
+                                this@StartDriveActivity,
+                                "Failed to save trip: ${exception.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                } catch (e: Exception) {
+                    Toast.makeText(
+                        this@StartDriveActivity,
+                        "Error saving trip: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
 
             stopLocationUpdates()
             finish()
         }
-
-        if (hasLocationPermission()) {
-            startLocationUpdates()
-        } else {
-            requestLocationPermission()
-        }
     }
-
     /**
      * Callback for when the Google Map is ready.
      * Sets up map UI and initial camera position.

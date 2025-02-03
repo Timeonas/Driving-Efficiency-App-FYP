@@ -1,5 +1,5 @@
 Skeleton for App:
-- Implement a cloud-based database to store trips
+- ~~Implement a cloud-based database to store trips~~
 - ~~Reset Password functionality~~
 - Ability to add a profile picture to the profile screen
 - Store profile picture in Firebase Storage, and retrieve it when a user signs in
@@ -13,6 +13,7 @@ Core App:
 the time taken, and the average speed
 - ~~Add icon on map to show the user's current location~~
 - Improve the orientation, okay for now
+- Add ability to delete trips
 
 Appearance:
 - Better App Logo

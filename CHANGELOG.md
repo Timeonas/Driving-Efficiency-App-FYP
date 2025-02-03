@@ -1,4 +1,4 @@
-Changelog
+
 ## 14/1/25
 - Added a new basic app
 
@@ -35,3 +35,9 @@ Changelog
 
 ## 26/1/25
 - Improved map view orientation, so that it is always facing the direction the user is driving
+
+## 3/2/25
+- Reformatted Changelog
+- Implemented Firestore to store trips
+- Trips now load from Firestore
+- Created TripRepository to handle Firestore operations

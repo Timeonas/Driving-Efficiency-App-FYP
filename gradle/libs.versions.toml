@@ -18,8 +18,12 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+#Firebase Auth
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom"}
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
+#Firebase Firestore
+firebase-firestore = { module = "com.google.firebase:firebase-firestore-ktx" }
+#Google Maps SDK
 google-android-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "gms-maps" }
 google-android-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "gms-location" }
 

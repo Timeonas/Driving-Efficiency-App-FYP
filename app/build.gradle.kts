@@ -59,6 +59,7 @@ dependencies {
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
 
     // Google Maps and Location Services
     implementation(libs.google.android.maps)
