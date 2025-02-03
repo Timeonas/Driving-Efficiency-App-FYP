@@ -1,15 +1,5 @@
 package com.example.drivingefficiencyapp.ui
 
-/**
- * The start drive activity for when a user starts a new drive (trip). It displays
- * the current date, a timer that starts when the user starts the drive, and a map showing
- * the user's current location. Once the user ends the drive, they will be taken back
- * to the main menu.
- *
- * @author Tim Samoska
- * @since January 17, 2025
- */
-
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -46,123 +36,184 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventListener {
-    private lateinit var binding: StartDriveActivityBinding //View Binding
-    private lateinit var fusedLocationClient: FusedLocationProviderClient //Location services
-    private lateinit var locationCallback: LocationCallback //Callback for location updates
-    private lateinit var sensorManager: SensorManager //Device sensor manager
-    private var googleMap: GoogleMap? = null //Google Maps instance
-    private var pendingLocation: LatLng? = null //Stored location when map isn't ready
-    private var currentBearing: Float = 0f //Current device orientation
-    private var startTime: Long = 0 //Trip start time
-    private val handler = Handler(Looper.getMainLooper()) //Handler for timer updates
-    private var isRunning = false //Timer state
+    private lateinit var binding: StartDriveActivityBinding
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var sensorManager: SensorManager
+    private var googleMap: GoogleMap? = null
+    private var pendingLocation: LatLng? = null
+    private var currentBearing: Float = 0f
+    private var startTime: Long = 0
+    private val handler = Handler(Looper.getMainLooper())
+    private var isRunning = false
     private val tripRepository = TripRepository()
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
-        private const val UPDATE_INTERVAL = 5000L //5 seconds
-        private const val FASTEST_INTERVAL = 3000L //3 seconds
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
+        private const val UPDATE_INTERVAL = 5000L
+        private const val FASTEST_INTERVAL = 3000L
+        private const val TAG = "StartDriveActivity"
     }
 
-    /**
-     * Runnable object to update the timer text view every second with the current
-     * elapsed time of the drive.
-     */
-    private val timerRunnable = object : Runnable {
-        override fun run() {
-            val currentTime = System.currentTimeMillis()
-            val elapsedTime = currentTime - startTime
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setupBasicUI()
 
-            val seconds = (elapsedTime / 1000).toInt()
-            val minutes = seconds / 60
-            val hours = minutes / 60
+        if (!checkGooglePlayServices()) return
 
-            val timeString = String.format(
-                Locale.getDefault(),
-                "%02d:%02d:%02d",
-                hours,
-                minutes % 60,
-                seconds % 60
-            )
+        initializeComponents()
+        checkAndRequestPermissions()
+    }
 
-            binding.timerTextView.text = timeString
+    private fun setupBasicUI() {
+        supportActionBar?.hide()
+        binding = StartDriveActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+    }
 
-            if (isRunning) {
-                handler.postDelayed(this, 1000)
+    private fun initializeComponents() {
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        setupLocationCallback()
+        setupMapFragment()
+        setupDateAndTimer()
+        setupEndDriveButton()
+    }
+
+    private fun setupMapFragment() {
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapView) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+    }
+
+    private fun setupLocationCallback() {
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    updateMapLocation(LatLng(location.latitude, location.longitude))
+                }
             }
         }
     }
 
-    /**
-     * Creates the start drive screen, sets up the timer to track drive duration,
-     * initializes the map, and starts location tracking.
-     *
-     * @param savedInstanceState If it exists, this activity is re-constructed
-     * from a previous saved state.
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        supportActionBar?.hide()
-
-        binding = StartDriveActivityBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        if (!checkGooglePlayServices()) {
-            Toast.makeText(this, "Google Play Services required", Toast.LENGTH_LONG).show()
+    private fun updateMapLocation(location: LatLng) {
+        if (googleMap == null) {
+            pendingLocation = location
             return
         }
 
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        val cameraPosition = CameraPosition.Builder()
+            .target(location)
+            .zoom(18f)
+            .tilt(60f)
+            .bearing(currentBearing)
+            .build()
 
-        setupLocationCallback()
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.mapView) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+    }
 
-        setupDateAndTimer()
-        if (hasLocationPermission()) {
-            startLocationService()
-            checkAndRequestPermissions()
-        } else {
-            requestLocationPermission()
+    private fun setupDateAndTimer() {
+        binding.dateTextView.text = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+            .format(Date())
+        startTime = System.currentTimeMillis()
+        isRunning = true
+        startTimer()
+    }
+
+    private fun startTimer() {
+        handler.post(object : Runnable {
+            override fun run() {
+                if (!isRunning) return
+
+                val elapsedTime = System.currentTimeMillis() - startTime
+                val seconds = (elapsedTime / 1000).toInt()
+                val minutes = seconds / 60
+                val hours = minutes / 60
+
+                binding.timerTextView.text = String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d:%02d",
+                    hours,
+                    minutes % 60,
+                    seconds % 60
+                )
+
+                handler.postDelayed(this, 1000)
+            }
+        })
+    }
+
+    private fun setupEndDriveButton() {
+        binding.endDriveButton.setOnClickListener {
+            saveTrip()
+            cleanup()
+            finish()
         }
+    }
 
-        setupEndDriveButton()
+    private fun saveTrip() {
+        val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
+        val duration = calculateDuration()
+
+        lifecycleScope.launch {
+            try {
+                tripRepository.saveTrip(date, duration)
+                    .onSuccess { showToast("Trip saved successfully") }
+                    .onFailure { e -> showToast("Failed to save trip: ${e.message}") }
+            } catch (e: Exception) {
+                showToast("Error saving trip: ${e.message}")
+            }
+        }
+    }
+
+    private fun calculateDuration(): String {
+        val elapsedTime = System.currentTimeMillis() - startTime
+        val seconds = (elapsedTime / 1000).toInt()
+        val minutes = seconds / 60
+        val hours = minutes / 60
+
+        return when {
+            hours > 0 -> {
+                val remainingMinutes = minutes % 60
+                if (remainingMinutes > 0) "$hours hours $remainingMinutes minutes"
+                else "$hours hours"
+            }
+            minutes > 0 -> "$minutes minutes"
+            else -> "$seconds seconds"
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun checkAndRequestPermissions() {
-        // Check location permission
-        if (!hasLocationPermission()) {
-            requestLocationPermission()
-            return
-        }
-
-        // Check notification permission for Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (!hasNotificationPermission()) {
-                requestNotificationPermission()
-                return
+        when {
+            !hasLocationPermission() -> requestLocationPermission()
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    !hasNotificationPermission() -> requestNotificationPermission()
+            else -> {
+                startLocationService()
+                startLocationUpdates()
             }
         }
-
-        // If all permissions granted, start location updates and service
-        startLocationService()
-        startLocationUpdates()
     }
 
-    private fun hasNotificationPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+    private fun hasLocationPermission() = ContextCompat.checkSelfPermission(
+        this, Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    private fun hasNotificationPermission() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+    } else true
+
+    private fun requestLocationPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            LOCATION_PERMISSION_REQUEST_CODE
+        )
     }
 
     private fun requestNotificationPermission() {
@@ -175,298 +226,87 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         }
     }
 
-    private fun checkGooglePlayServices(): Boolean {
-        val availability = GoogleApiAvailability.getInstance()
-        val resultCode = availability.isGooglePlayServicesAvailable(this)
-
-        if (resultCode != ConnectionResult.SUCCESS) {
-            Log.e("LocationDebug", "Google Play Services not available: $resultCode")
-            if (availability.isUserResolvableError(resultCode)) {
-                availability.getErrorDialog(this, resultCode, 9000)?.show()
-            }
-            return false
-        }
-
-        Log.d("LocationDebug", "Google Play Services available")
-        return true
-    }
-
-    private fun setupLocationCallback() {
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                Log.d("LocationDebug", "Location update received")
-                locationResult.lastLocation?.let { location ->
-                    Log.d("LocationDebug", "New location: ${location.latitude}, ${location.longitude}")
-                    val currentLatLng = LatLng(location.latitude, location.longitude)
-
-                    if (googleMap == null) {
-                        Log.d("LocationDebug", "Map not ready, storing location")
-                        pendingLocation = currentLatLng
-                    } else {
-                        Log.d("LocationDebug", "Updating camera position")
-                        val cameraPosition = CameraPosition.Builder()
-                            .target(currentLatLng)
-                            .zoom(18f)
-                            .tilt(60f)
-                            .bearing(currentBearing)
-                            .build()
-
-                        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
-                    }
-                } ?: Log.e("LocationDebug", "Location in update was null")
-            }
-        }
-    }
-
-    private fun setupDateAndTimer() {
-        val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-        binding.dateTextView.text = dateFormat.format(Date())
-
-        startTime = System.currentTimeMillis()
-        isRunning = true
-        handler.post(timerRunnable)
-    }
-
-    private fun setupEndDriveButton() {
-        binding.endDriveButton.setOnClickListener {
-            val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
-            val elapsedTime = System.currentTimeMillis() - startTime
-            val seconds = (elapsedTime / 1000).toInt()
-            val minutes = seconds / 60
-            val hours = minutes / 60
-
-            val duration = when {
-                hours > 0 -> {
-                    val tempMinutes = minutes % 60
-                    if (tempMinutes > 0) "$hours hours $tempMinutes minutes" else "$hours hours"
-                }
-                minutes > 0 -> "$minutes minutes"
-                else -> "$seconds seconds"
-            }
-
-            lifecycleScope.launch {
-                try {
-                    tripRepository.saveTrip(date, duration)
-                        .onSuccess {
-                            Toast.makeText(
-                                this@StartDriveActivity,
-                                "Trip saved successfully",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        .onFailure { exception ->
-                            Toast.makeText(
-                                this@StartDriveActivity,
-                                "Failed to save trip: ${exception.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                } catch (e: Exception) {
-                    Toast.makeText(
-                        this@StartDriveActivity,
-                        "Error saving trip: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            stopLocationService()
-            stopLocationUpdates()
-            finish()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun startLocationService() {
-        Log.d("LocationDebug", "Starting location service")
-        val serviceIntent = Intent(this, LocationService::class.java)
-        startForegroundService(serviceIntent)
-    }
-
-    private fun stopLocationService() {
-        Log.d("LocationDebug", "Stopping location service")
-        val serviceIntent = Intent(this, LocationService::class.java)
-        stopService(serviceIntent)
-    }
-
     private fun startLocationUpdates() {
-        Log.d("LocationDebug", "Attempting to start location updates")
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            try {
-                val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
-                    .setMinUpdateIntervalMillis(FASTEST_INTERVAL)
-                    .build()
-
-                Log.d("LocationDebug", "Location request built successfully")
-
-                fusedLocationClient.lastLocation
-                    .addOnSuccessListener { location ->
-                        Log.d("LocationDebug", "Last location: ${location?.latitude}, ${location?.longitude}")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("LocationDebug", "Failed to get last location: ${e.message}")
-                    }
-
-                fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    Looper.getMainLooper()
-                ).addOnSuccessListener {
-                    Log.d("LocationDebug", "Location updates successfully requested")
-                }.addOnFailureListener { e ->
-                    Log.e("LocationDebug", "Failed to request location updates: ${e.message}")
-                }
-            } catch (e: Exception) {
-                Log.e("LocationDebug", "Exception starting location updates: ${e.message}", e)
-            }
-        } else {
-            Log.e("LocationDebug", "Location permission not granted")
+        if (!hasLocationPermission()) {
             requestLocationPermission()
+            return
+        }
+
+        try {
+            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(FASTEST_INTERVAL)
+                .build()
+
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Error starting location updates", e)
         }
     }
-    /**
-     * Callback for when the Google Map is ready.
-     * Sets up map UI and initial camera position.
-     *
-     * @param map The Google Map instance that is ready for use
-     */
+
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        googleMap?.uiSettings?.isTiltGesturesEnabled = true
+        setupMapSettings()
         if (hasLocationPermission()) {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                googleMap?.isMyLocationEnabled = true
-                googleMap?.uiSettings?.isMyLocationButtonEnabled = true
-                googleMap?.uiSettings?.isTiltGesturesEnabled = true
+            enableLocationFeatures()
+        }
+    }
 
-                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                    location?.let {
-                        val currentLatLng = LatLng(it.latitude, it.longitude)
-                        val initialPosition = CameraPosition.Builder()
-                            .target(currentLatLng)
-                            .zoom(18f)
-                            .tilt(60f)
-                            .bearing(currentBearing)
-                            .build()
-
-                        googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(initialPosition))
-                    }
-                }
-
-                pendingLocation?.let { location ->
-                    val cameraPosition = CameraPosition.Builder()
-                        .target(location)
-                        .zoom(18f)
-                        .tilt(60f)
-                        .bearing(currentBearing)
-                        .build()
-
-                    googleMap?.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
-                    pendingLocation = null
-                }
+    private fun setupMapSettings() {
+        googleMap?.apply {
+            uiSettings?.apply {
+                isTiltGesturesEnabled = true
+                isMyLocationButtonEnabled = true
             }
         }
     }
 
-
-    /**
-     * Registers sensor listeners when activity resumes.
-     */
-    override fun onResume() {
-        super.onResume()
-        // Register the sensor listener when the activity resumes
-        sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION)?.let { orientationSensor ->
-            sensorManager.registerListener(
-                this,
-                orientationSensor,
-                SensorManager.SENSOR_DELAY_GAME
-            )
+    private fun enableLocationFeatures() {
+        try {
+            googleMap?.isMyLocationEnabled = true
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    updateMapLocation(LatLng(it.latitude, it.longitude))
+                }
+            }
+            pendingLocation?.let { location ->
+                updateMapLocation(location)
+                pendingLocation = null
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Error enabling location features", e)
         }
     }
 
-    /**
-     * Unregisters sensor listeners when activity pauses.
-     */
-    override fun onPause() {
-        super.onPause()
-        // Unregister the sensor listener when the activity is paused
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
+            currentBearing = event.values[0]
+            pendingLocation?.let { updateMapLocation(it) }
+        }
+    }
+
+    private fun cleanup() {
+        isRunning = false
+        handler.removeCallbacksAndMessages(null)
+        stopLocationUpdates()
+        stopLocationService()
         sensorManager.unregisterListener(this)
     }
 
-    /**
-     * Handles sensor value changes, particularly device orientation.
-     * Updates the map camera bearing to match device orientation.
-     *
-     * @param event The sensor event containing new sensor values
-     */
-    override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
-            currentBearing = event.values[0] // Azimuth value (bearing)
-
-            // Update camera bearing if map and current location are available
-            googleMap?.let { map ->
-                pendingLocation?.let { location ->
-                    val cameraPosition = CameraPosition.Builder()
-                        .target(location)
-                        .zoom(18f)
-                        .tilt(60f)
-                        .bearing(currentBearing)
-                        .build()
-
-                    map.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
-                }
-            }
-        }
+    override fun onDestroy() {
+        super.onDestroy()
+        cleanup()
     }
 
-    /**
-     * Handles changes in sensor accuracy.
-     *
-     * @param sensor The sensor whose accuracy changed
-     * @param accuracy The new accuracy value
-     */
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        // Handle accuracy changes if needed
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    /**
-     * Checks if the app has location permission.
-     *
-     * @return Boolean indicating if location permission is granted
-     */
-    private fun hasLocationPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    /**
-     * Requests location permission from the user.
-     */
-    private fun requestLocationPermission() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-            LOCATION_PERMISSION_REQUEST_CODE
-        )
-    }
-
-    /**
-     * Handles the result of permission requests.
-     *
-     * @param requestCode The code used to request the permission
-     * @param permissions The requested permissions
-     * @param grantResults The grant results for the corresponding permissions
-     */
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -474,48 +314,56 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            LOCATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    checkAndRequestPermissions()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Location permission is required for tracking your drive",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            checkAndRequestPermissions()
+        } else {
+            val message = when (requestCode) {
+                LOCATION_PERMISSION_REQUEST_CODE ->
+                    "Location permission is required for tracking your drive"
+                NOTIFICATION_PERMISSION_REQUEST_CODE ->
+                    "Notification permission is required for tracking in background"
+                else -> "Required permission was denied"
             }
-            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    checkAndRequestPermissions()
-                } else {
-                    Toast.makeText(
-                        this,
-                        "Notification permission is required for tracking in background",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
+            showToast(message)
         }
     }
 
-    /**
-     * Stops location updates.
-     */
-    private fun stopLocationUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+    override fun onResume() {
+        super.onResume()
+        sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION)?.let { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
+        }
     }
 
-    /**
-     * Cleans up resources when the activity is destroyed.
-     * Stops the timer, location updates, and sensor listeners.
-     */
-    override fun onDestroy() {
-        super.onDestroy()
-        isRunning = false
-        handler.removeCallbacks(timerRunnable)
-        stopLocationUpdates()
+    override fun onPause() {
+        super.onPause()
         sensorManager.unregisterListener(this)
+    }
+
+    private fun checkGooglePlayServices(): Boolean {
+        val availability = GoogleApiAvailability.getInstance()
+        val resultCode = availability.isGooglePlayServicesAvailable(this)
+
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (availability.isUserResolvableError(resultCode)) {
+                availability.getErrorDialog(this, resultCode, 9000)?.show()
+            }
+            showToast("Google Play Services required")
+            return false
+        }
+        return true
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startLocationService() {
+        startForegroundService(Intent(this, LocationService::class.java))
+    }
+
+    private fun stopLocationService() {
+        stopService(Intent(this, LocationService::class.java))
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 }

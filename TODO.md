@@ -14,7 +14,8 @@ the time taken, and the average speed
 - ~~Add icon on map to show the user's current location~~
 - Improve the orientation, okay for now
 - Add ability to delete trips
-- Add offline functionality, so that trips are cached locally if the user is offline
+- ~~Add offline functionality, so that trips are cached locally if the user is offline~~
+- Make the tracking trip notification not cancelable
 
 Appearance:
 - Better App Logo
@@ -26,7 +27,7 @@ Project:
 - ~~Sort the Kotlin files into different files and folders to make it more organized~~
 - Develop the README.md, with instructions on how to build and run the app
 - Fix linting issues
-- Refactor StartDriveActivity.kt to reduce code repetition !!
+- ~~Refactor StartDriveActivity.kt to reduce code repetition !!~~
 
 Bugs:
 - ~~Fix the bug where the app crashes when the user tries to start a trip a second time back to back~~
