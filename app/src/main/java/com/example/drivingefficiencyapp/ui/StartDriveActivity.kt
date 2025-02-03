@@ -11,22 +11,29 @@ package com.example.drivingefficiencyapp.ui
  */
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
+import com.example.drivingefficiencyapp.location.LocationService
 import com.example.drivingefficiencyapp.trip.TripRepository
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -55,6 +62,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
         private const val UPDATE_INTERVAL = 5000L //5 seconds
         private const val FASTEST_INTERVAL = 3000L //3 seconds
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
     }
 
     /**
@@ -93,6 +101,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
      * @param savedInstanceState If it exists, this activity is re-constructed
      * from a previous saved state.
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
@@ -100,18 +109,101 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         binding = StartDriveActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        if (!checkGooglePlayServices()) {
+            Toast.makeText(this, "Google Play Services required", Toast.LENGTH_LONG).show()
+            return
+        }
 
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        setupLocationCallback()
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapView) as SupportMapFragment
+        mapFragment.getMapAsync(this)
+
+        setupDateAndTimer()
+        if (hasLocationPermission()) {
+            startLocationService()
+            checkAndRequestPermissions()
+        } else {
+            requestLocationPermission()
+        }
+
+        setupEndDriveButton()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun checkAndRequestPermissions() {
+        // Check location permission
+        if (!hasLocationPermission()) {
+            requestLocationPermission()
+            return
+        }
+
+        // Check notification permission for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!hasNotificationPermission()) {
+                requestNotificationPermission()
+                return
+            }
+        }
+
+        // If all permissions granted, start location updates and service
+        startLocationService()
+        startLocationUpdates()
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    private fun checkGooglePlayServices(): Boolean {
+        val availability = GoogleApiAvailability.getInstance()
+        val resultCode = availability.isGooglePlayServicesAvailable(this)
+
+        if (resultCode != ConnectionResult.SUCCESS) {
+            Log.e("LocationDebug", "Google Play Services not available: $resultCode")
+            if (availability.isUserResolvableError(resultCode)) {
+                availability.getErrorDialog(this, resultCode, 9000)?.show()
+            }
+            return false
+        }
+
+        Log.d("LocationDebug", "Google Play Services available")
+        return true
+    }
+
+    private fun setupLocationCallback() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
+                Log.d("LocationDebug", "Location update received")
                 locationResult.lastLocation?.let { location ->
+                    Log.d("LocationDebug", "New location: ${location.latitude}, ${location.longitude}")
                     val currentLatLng = LatLng(location.latitude, location.longitude)
 
                     if (googleMap == null) {
+                        Log.d("LocationDebug", "Map not ready, storing location")
                         pendingLocation = currentLatLng
                     } else {
+                        Log.d("LocationDebug", "Updating camera position")
                         val cameraPosition = CameraPosition.Builder()
                             .target(currentLatLng)
                             .zoom(18f)
@@ -119,31 +211,25 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                             .bearing(currentBearing)
                             .build()
 
-                        googleMap?.animateCamera(
-                            CameraUpdateFactory.newCameraPosition(
-                                cameraPosition
-                            )
-                        )
+                        googleMap?.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
                     }
-                }
+                } ?: Log.e("LocationDebug", "Location in update was null")
             }
         }
+    }
 
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.mapView) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-
+    private fun setupDateAndTimer() {
         val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
         binding.dateTextView.text = dateFormat.format(Date())
 
         startTime = System.currentTimeMillis()
         isRunning = true
         handler.post(timerRunnable)
+    }
 
-
+    private fun setupEndDriveButton() {
         binding.endDriveButton.setOnClickListener {
-            val date = dateFormat.format(Date())
-
+            val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
             val elapsedTime = System.currentTimeMillis() - startTime
             val seconds = (elapsedTime / 1000).toInt()
             val minutes = seconds / 60
@@ -154,12 +240,10 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                     val tempMinutes = minutes % 60
                     if (tempMinutes > 0) "$hours hours $tempMinutes minutes" else "$hours hours"
                 }
-
                 minutes > 0 -> "$minutes minutes"
                 else -> "$seconds seconds"
             }
 
-            // Save trip to cloud
             lifecycleScope.launch {
                 try {
                     tripRepository.saveTrip(date, duration)
@@ -186,8 +270,62 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                 }
             }
 
+            stopLocationService()
             stopLocationUpdates()
             finish()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun startLocationService() {
+        Log.d("LocationDebug", "Starting location service")
+        val serviceIntent = Intent(this, LocationService::class.java)
+        startForegroundService(serviceIntent)
+    }
+
+    private fun stopLocationService() {
+        Log.d("LocationDebug", "Stopping location service")
+        val serviceIntent = Intent(this, LocationService::class.java)
+        stopService(serviceIntent)
+    }
+
+    private fun startLocationUpdates() {
+        Log.d("LocationDebug", "Attempting to start location updates")
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            try {
+                val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+                    .setMinUpdateIntervalMillis(FASTEST_INTERVAL)
+                    .build()
+
+                Log.d("LocationDebug", "Location request built successfully")
+
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location ->
+                        Log.d("LocationDebug", "Last location: ${location?.latitude}, ${location?.longitude}")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("LocationDebug", "Failed to get last location: ${e.message}")
+                    }
+
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    Looper.getMainLooper()
+                ).addOnSuccessListener {
+                    Log.d("LocationDebug", "Location updates successfully requested")
+                }.addOnFailureListener { e ->
+                    Log.e("LocationDebug", "Failed to request location updates: ${e.message}")
+                }
+            } catch (e: Exception) {
+                Log.e("LocationDebug", "Exception starting location updates: ${e.message}", e)
+            }
+        } else {
+            Log.e("LocationDebug", "Location permission not granted")
+            requestLocationPermission()
         }
     }
     /**
@@ -237,6 +375,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
             }
         }
     }
+
 
     /**
      * Registers sensor listeners when activity resumes.
@@ -328,6 +467,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
      * @param permissions The requested permissions
      * @param grantResults The grant results for the corresponding permissions
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -337,7 +477,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         when (requestCode) {
             LOCATION_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startLocationUpdates()
+                    checkAndRequestPermissions()
                 } else {
                     Toast.makeText(
                         this,
@@ -346,28 +486,17 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                     ).show()
                 }
             }
-        }
-    }
-
-    /**
-     * Starts location updates if permission is granted.
-     * Updates occur according to UPDATE_INTERVAL and FASTEST_INTERVAL constants.
-     */
-    private fun startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
-                .setMinUpdateIntervalMillis(FASTEST_INTERVAL)
-                .build()
-
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
+            NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    checkAndRequestPermissions()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Notification permission is required for tracking in background",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 

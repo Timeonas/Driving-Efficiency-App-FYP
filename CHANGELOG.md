@@ -41,3 +41,5 @@
 - Implemented Firestore to store trips
 - Trips now load from Firestore
 - Created TripRepository to handle Firestore operations
+- Fixed bug where location was not working on some devices
+- Added constant notification when a trip starts
