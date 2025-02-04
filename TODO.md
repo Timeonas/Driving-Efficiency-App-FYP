@@ -1,8 +1,8 @@
 Skeleton for App:
 - ~~Implement a cloud-based database to store trips~~
 - ~~Reset Password functionality~~
-- Ability to add a profile picture to the profile screen
-- Store profile picture in Firebase Storage, and retrieve it when a user signs in
+- ~~Ability to add a profile picture to the profile screen~~
+- ~~Store profile picture in Firebase Storage, and retrieve it when a user signs in~~
 
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
@@ -31,5 +31,6 @@ Project:
 
 Bugs:
 - ~~Fix the bug where the app crashes when the user tries to start a trip a second time back to back~~
-- ~~Sometimes on first instance of saving a trip, error job cancelle~~d
+- ~~Sometimes on first instance of saving a trip, error job cancelled~~
 - ~~Sometimes location does not work on my phone~~
+- Fix the default icon appearing for a 1-2 seconds before the pfp loads

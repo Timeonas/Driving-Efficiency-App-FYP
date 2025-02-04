@@ -62,7 +62,7 @@
         </activity>
 
         <activity
-            android:name=".ui.ProfileActivity"
+            android:name=".profile.ProfileActivity"
             android:exported="false">
         </activity>
 

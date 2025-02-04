@@ -21,8 +21,11 @@ material = { group = "com.google.android.material", name = "material", version.r
 #Firebase Auth
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom"}
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-#Firebase Firestore
+#Firebase Firestore and Storage
 firebase-firestore = { module = "com.google.firebase:firebase-firestore-ktx" }
+firebase-storage = { module = "com.google.firebase:firebase-storage-ktx" }
+#Glide
+glide = { group = "com.github.bumptech.glide", name = "glide", version = "4.16.0" }
 #Google Maps SDK
 google-android-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "gms-maps" }
 google-android-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "gms-location" }

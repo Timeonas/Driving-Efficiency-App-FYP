@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.PersistentCacheSettings
+import com.google.firebase.storage.FirebaseStorage
 
 class DrivingEfficiencyApp : Application() {
     override fun onCreate() {
@@ -13,6 +14,9 @@ class DrivingEfficiencyApp : Application() {
 
         // Initialize Firebase Auth early
         FirebaseAuth.getInstance()
+
+        // Initialize Firebase Storage
+        FirebaseStorage.getInstance()
 
         // Configure Firestore with persistent cache
         val settings = FirebaseFirestoreSettings.Builder()

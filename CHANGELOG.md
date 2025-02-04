@@ -45,3 +45,7 @@
 - Added constant notification when a trip starts
 - Refactored StartDriveActivity.kt to reduce code repetition
 - Fixed bug where first trip was not being saved
+
+## 4/2/25
+- Added ability to upload profile pictures
+- Integrated Firebase Storage to store profile pictures
