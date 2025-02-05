@@ -6,6 +6,7 @@ Skeleton for App:
 
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
+- Create a screen that allows needs to be connected to an OBD2 device and show the user's car's information
 - Parse basic information from the user's phone, such as the current speed, and display it on the screen
 - ~~Tilt the map view so its in 3d mode~~
 - ~~Orient the map view so that it is always facing the direction the user is driving~~
@@ -13,7 +14,7 @@ Core App:
 the time taken, and the average speed
 - ~~Add icon on map to show the user's current location~~
 - Improve the orientation, okay for now
-- Add ability to delete trips
+- ~~Add ability to delete trips~~
 - ~~Add offline functionality, so that trips are cached locally if the user is offline~~
 - Make the tracking trip notification not cancelable
 
@@ -33,4 +34,4 @@ Bugs:
 - ~~Fix the bug where the app crashes when the user tries to start a trip a second time back to back~~
 - ~~Sometimes on first instance of saving a trip, error job cancelled~~
 - ~~Sometimes location does not work on my phone~~
-- Fix the default icon appearing for a 1-2 seconds before the pfp loads
+- ~~Fix the default icon appearing for a 1-2 seconds before the pfp loads~~

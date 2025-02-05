@@ -54,3 +54,4 @@
 - Optimised the profile picture loading and fixed bugs associated with it
 - Removed firebase api key from the project repo
 - Removed files and folders that were not being used
+- Added ability to delete trips

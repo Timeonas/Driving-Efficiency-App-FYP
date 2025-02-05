@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.*
 import com.example.drivingefficiencyapp.databinding.TripsActivityBinding
@@ -93,11 +92,29 @@ class TripsActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        tripAdapter = TripAdapter(emptyList())
+        tripAdapter = TripAdapter(emptyList()) { trip ->
+            deleteTrip(trip)
+        }
         binding.tripsRecyclerView.apply {
             layoutManager = LinearLayoutManager(this@TripsActivity)
             adapter = tripAdapter
             visibility = View.GONE
+        }
+    }
+
+    private fun deleteTrip(trip: Trip) {
+        lifecycleScope.launch {
+            try {
+                tripRepository.deleteTrip(trip.id)
+                    .onSuccess {
+                        showToast("Trip deleted successfully")
+                    }
+                    .onFailure { e ->
+                        showToast("Failed to delete trip: ${e.message}")
+                    }
+            } catch (e: Exception) {
+                showToast("Error deleting trip: ${e.message}")
+            }
         }
     }
 
@@ -119,18 +136,20 @@ class TripsActivity : AppCompatActivity() {
             tripRepository.getTripsFlow()
                 .catch { exception ->
                     showLoading(false)
-                    Toast.makeText(
-                        this@TripsActivity,
-                        "Error loading trips: ${exception.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    showToast("Error loading trips: ${exception.message}")
                 }
                 .collect { trips ->
-                    tripAdapter = TripAdapter(trips)
+                    tripAdapter = TripAdapter(trips) { trip ->
+                        deleteTrip(trip)
+                    }
                     binding.tripsRecyclerView.adapter = tripAdapter
                     showLoading(false)
                 }
         }
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {

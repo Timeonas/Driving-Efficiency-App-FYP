@@ -24,4 +24,5 @@
     <string name="your_trips">Your Trips</string>
     <string name="no_trips_found">No trips found</string>
     <string name="change_photo">Change Photo</string>
+    <string name="delete_trip">Delete Trip</string>
 </resources>
