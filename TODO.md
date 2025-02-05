@@ -1,12 +1,16 @@
-Skeleton for App:
+Skeleton for App (complete):
 - ~~Implement a cloud-based database to store trips~~
 - ~~Reset Password functionality~~
 - ~~Ability to add a profile picture to the profile screen~~
 - ~~Store profile picture in Firebase Storage, and retrieve it when a user signs in~~
 
+OBD2 Functionality:
+- Create a simple kotlin app that communicates with the OBD2 device, and reads something as proof of concept
+- Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.
+- Implement into the main project
+
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
-- Create a screen that allows needs to be connected to an OBD2 device and show the user's car's information
 - Parse basic information from the user's phone, such as the current speed, and display it on the screen
 - ~~Tilt the map view so its in 3d mode~~
 - ~~Orient the map view so that it is always facing the direction the user is driving~~
@@ -18,7 +22,7 @@ the time taken, and the average speed
 - ~~Add offline functionality, so that trips are cached locally if the user is offline~~
 - ~~Make the tracking trip notification not cancelable~~
 
-Appearance:
+Appearance (To be done after core app is done):
 - Better App Logo
 - Improve the appearance of the app, with a better color scheme and more modern design
 - Add animations to the app, such as when a trip starts or ends
