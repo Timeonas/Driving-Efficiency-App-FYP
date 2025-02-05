@@ -6,8 +6,7 @@
 - Created CHANGELOG.md
 - Created an intro splash screen to the app, to be improved later
 
-## 16/1/2
-5
+## 16/1/25
 - Created the main menu, featuring two buttons, one to start a trip and one to view past trips.
 - Added a new app icon
 - Added a basic start trip screen, with a button to start the trip and a elapsed time counter
@@ -51,6 +50,6 @@
 - Implemented profile picture functionality, so users can add a profile picture to the profile screen
 - Stored profile picture in Firebase Storage, and retrieve it when a user signs in
 
-# 5/2/25
+## 5/2/25
 - Optimised the profile picture loading and fixed bugs associated with it
 - Removed firebase api key from the project repo
