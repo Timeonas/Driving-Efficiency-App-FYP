@@ -53,3 +53,4 @@
 
 # 5/2/25
 - Optimised the profile picture loading and fixed bugs associated with it
+- Removed firebase api key from the project repo
