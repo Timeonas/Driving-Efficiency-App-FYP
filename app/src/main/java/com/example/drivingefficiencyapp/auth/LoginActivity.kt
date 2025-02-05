@@ -13,9 +13,12 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.drivingefficiencyapp.ui.MainMenuActivity
 import com.example.drivingefficiencyapp.databinding.LoginActivityBinding
+import com.example.drivingefficiencyapp.profile.ProfileImageCache
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth //Firebase Auth
@@ -68,11 +71,18 @@ class LoginActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    //Sign in success, update UI with the signed in user's information
+                    // Clear any existing cached image from previous user
+                    ProfileImageCache.clearCache()
+
+                    // Start pre-loading the new user's profile image
+                    lifecycleScope.launch {
+                        ProfileImageCache.preloadProfileImage(applicationContext)
+                    }
+
+                    // Navigate to main menu
                     startActivity(Intent(this, MainMenuActivity::class.java))
                     finish()
                 } else {
-                    //If sign in fails, display a message to the user
                     Toast.makeText(this, "Authentication failed.", Toast.LENGTH_SHORT).show()
                 }
             }

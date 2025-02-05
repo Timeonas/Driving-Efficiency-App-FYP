@@ -1,17 +1,23 @@
 package com.example.drivingefficiencyapp.profile
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.auth.LoginActivity
 import com.example.drivingefficiencyapp.databinding.ProfileActivityBinding
-import com.example.drivingefficiencyapp.profile.ProfileImageHandler
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
 
 /**
  * User profile activity for the Driving Efficiency App.
@@ -26,6 +32,7 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ProfileActivityBinding
     private lateinit var profileImageHandler: ProfileImageHandler
+    private val storage = FirebaseStorage.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +65,8 @@ class ProfileActivity : AppCompatActivity() {
 
         // Setup sign out
         binding.signOutButton.setOnClickListener {
+            // Clear the image cache before signing out
+            ProfileImageCache.clearCache()
             auth.signOut()
             startActivity(Intent(this, LoginActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -77,17 +86,63 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun loadProfileImage() {
         lifecycleScope.launch {
+            val hasProfileImage = try {
+                val userId = auth.currentUser?.uid ?: return@launch
+                val imageRef = storage.reference.child("$userId.jpg")
+                imageRef.metadata.await()
+                true
+            } catch (e: Exception) {
+                false
+            }
+
+            if (!hasProfileImage) {
+                binding.profileImageProgress.visibility = View.GONE
+                binding.profileImage.alpha = 1.0f
+                binding.profileImage.setImageResource(R.drawable.ic_profile_default)
+                return@launch
+            }
+
             try {
+                binding.profileImageProgress.visibility = View.VISIBLE
+                binding.profileImage.alpha = 0.5f
+
                 val imageUrl = profileImageHandler.getCurrentProfileImageUrl()
+
                 if (!isFinishing) {
                     Glide.with(this@ProfileActivity)
                         .load(imageUrl)
                         .placeholder(R.drawable.ic_profile_default)
                         .circleCrop()
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .listener(object : RequestListener<Drawable> {
+                            override fun onLoadFailed(
+                                e: GlideException?,
+                                model: Any?,
+                                target: Target<Drawable>,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.profileImageProgress.visibility = View.GONE
+                                binding.profileImage.alpha = 1.0f
+                                return false
+                            }
+
+                            override fun onResourceReady(
+                                resource: Drawable,
+                                model: Any,
+                                target: Target<Drawable>?,
+                                dataSource: com.bumptech.glide.load.DataSource,
+                                isFirstResource: Boolean
+                            ): Boolean {
+                                binding.profileImageProgress.visibility = View.GONE
+                                binding.profileImage.alpha = 1.0f
+                                return false
+                            }
+                        })
                         .into(binding.profileImage)
                 }
             } catch (e: Exception) {
-                // Handle error case
+                binding.profileImageProgress.visibility = View.GONE
+                binding.profileImage.alpha = 1.0f
                 binding.profileImage.setImageResource(R.drawable.ic_profile_default)
             }
         }

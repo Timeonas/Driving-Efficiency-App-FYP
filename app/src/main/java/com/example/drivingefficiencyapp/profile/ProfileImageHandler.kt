@@ -79,7 +79,9 @@ class ProfileImageHandler(private val activity: AppCompatActivity) {
 
         auth.currentUser?.updateProfile(profileUpdates)
             ?.addOnSuccessListener {
-                onImageSelectedCallback?.invoke(false, null) // Stop loading, success
+                // Clear the cache so it will be updated with the new image
+                ProfileImageCache.clearCache()
+                onImageSelectedCallback?.invoke(false, null)
             }
             ?.addOnFailureListener { exception ->
                 onImageSelectedCallback?.invoke(false, "Failed to update profile: ${exception.message}")
@@ -87,15 +89,28 @@ class ProfileImageHandler(private val activity: AppCompatActivity) {
     }
 
     suspend fun getCurrentProfileImageUrl(): Uri? {
-        return try {
+        try {
             val userId = auth.currentUser?.uid ?: return null
             val imageRef = storage.reference.child("$userId.jpg")
-            imageRef.downloadUrl.await()
+
+            // First check if the file exists
+            return try {
+                val metadata = imageRef.metadata.await()
+                if (metadata != null) {
+                    // File exists, get download URL
+                    imageRef.downloadUrl.await()
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                // File doesn't exist or other error
+                null
+            }
         } catch (e: Exception) {
             activity.runOnUiThread {
                 Toast.makeText(activity, "Error getting image: ${e.message}", Toast.LENGTH_LONG).show()
             }
-            null
+            return null
         }
     }
 }

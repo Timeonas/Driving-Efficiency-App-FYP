@@ -20,7 +20,9 @@
             android:layout_height="match_parent"
             android:contentDescription="@string/profile_picture"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_profile_default" />
+            android:background="@drawable/circle_background"
+            android:src="@drawable/ic_profile_default"
+            android:clipToOutline="true" />
 
         <ProgressBar
             android:id="@+id/profileImageProgress"

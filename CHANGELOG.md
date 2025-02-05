@@ -6,7 +6,8 @@
 - Created CHANGELOG.md
 - Created an intro splash screen to the app, to be improved later
 
-## 16/1/25
+## 16/1/2
+5
 - Created the main menu, featuring two buttons, one to start a trip and one to view past trips.
 - Added a new app icon
 - Added a basic start trip screen, with a button to start the trip and a elapsed time counter
@@ -47,5 +48,4 @@
 - Fixed bug where first trip was not being saved
 
 ## 4/2/25
-- Added ability to upload profile pictures
-- Integrated Firebase Storage to store profile pictures
+- Fixes to profile picture functionality
