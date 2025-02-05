@@ -55,3 +55,4 @@
 - Removed firebase api key from the project repo
 - Removed files and folders that were not being used
 - Added ability to delete trips
+- Made the tracking trip notification not cancelable

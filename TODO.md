@@ -16,7 +16,7 @@ the time taken, and the average speed
 - Improve the orientation, okay for now
 - ~~Add ability to delete trips~~
 - ~~Add offline functionality, so that trips are cached locally if the user is offline~~
-- Make the tracking trip notification not cancelable
+- ~~Make the tracking trip notification not cancelable~~
 
 Appearance:
 - Better App Logo

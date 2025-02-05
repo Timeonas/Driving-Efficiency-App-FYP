@@ -32,11 +32,14 @@ class LocationService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("Tracking Drive")
-            .setContentText("Recording your trip details...")
+            .setContentTitle("Trip in Progress")
+            .setContentText("Recording your trip details")
             .setSmallIcon(R.drawable.ic_car)
-            .setOngoing(true)
             .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setSilent(true)
             .build()
 
         // Start service in foreground with notification
@@ -53,17 +56,24 @@ class LocationService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
+        NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
-            "Drive Tracking",
-            NotificationManager.IMPORTANCE_LOW
+            "Trip Tracking",
+            NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = "Shows when a trip is being recorded"
             setShowBadge(false)
+            setSound(null, null)
+            enableLights(false)
+            enableVibration(false)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            importance = NotificationManager.IMPORTANCE_MIN
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                setAllowBubbles(false)
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(this)
         }
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
     }
 
     override fun onDestroy() {
