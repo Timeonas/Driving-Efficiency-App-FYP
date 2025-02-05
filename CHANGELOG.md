@@ -48,4 +48,8 @@
 - Fixed bug where first trip was not being saved
 
 ## 4/2/25
-- Fixes to profile picture functionality
+- Implemented profile picture functionality, so users can add a profile picture to the profile screen
+- Stored profile picture in Firebase Storage, and retrieve it when a user signs in
+
+# 5/2/25
+- Optimised the profile picture loading and fixed bugs associated with it

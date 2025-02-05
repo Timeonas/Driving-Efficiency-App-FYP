@@ -86,6 +86,13 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun loadProfileImage() {
         lifecycleScope.launch {
+            val cachedImage = ProfileImageCache.getCachedImage()
+            if (cachedImage != null) {
+                binding.profileImage.setImageDrawable(cachedImage)
+            } else {
+                binding.profileImage.setImageResource(R.drawable.ic_profile_default)
+            }
+
             val hasProfileImage = try {
                 val userId = auth.currentUser?.uid ?: return@launch
                 val imageRef = storage.reference.child("$userId.jpg")
@@ -96,22 +103,15 @@ class ProfileActivity : AppCompatActivity() {
             }
 
             if (!hasProfileImage) {
-                binding.profileImageProgress.visibility = View.GONE
-                binding.profileImage.alpha = 1.0f
-                binding.profileImage.setImageResource(R.drawable.ic_profile_default)
                 return@launch
             }
 
             try {
-                binding.profileImageProgress.visibility = View.VISIBLE
-                binding.profileImage.alpha = 0.5f
-
                 val imageUrl = profileImageHandler.getCurrentProfileImageUrl()
 
                 if (!isFinishing) {
                     Glide.with(this@ProfileActivity)
                         .load(imageUrl)
-                        .placeholder(R.drawable.ic_profile_default)
                         .circleCrop()
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .listener(object : RequestListener<Drawable> {
@@ -121,8 +121,6 @@ class ProfileActivity : AppCompatActivity() {
                                 target: Target<Drawable>,
                                 isFirstResource: Boolean
                             ): Boolean {
-                                binding.profileImageProgress.visibility = View.GONE
-                                binding.profileImage.alpha = 1.0f
                                 return false
                             }
 
@@ -133,16 +131,16 @@ class ProfileActivity : AppCompatActivity() {
                                 dataSource: com.bumptech.glide.load.DataSource,
                                 isFirstResource: Boolean
                             ): Boolean {
-                                binding.profileImageProgress.visibility = View.GONE
-                                binding.profileImage.alpha = 1.0f
+                                lifecycleScope.launch {
+                                    ProfileImageCache.clearCache()
+                                    ProfileImageCache.preloadProfileImage(this@ProfileActivity)
+                                }
                                 return false
                             }
                         })
                         .into(binding.profileImage)
                 }
             } catch (e: Exception) {
-                binding.profileImageProgress.visibility = View.GONE
-                binding.profileImage.alpha = 1.0f
                 binding.profileImage.setImageResource(R.drawable.ic_profile_default)
             }
         }
