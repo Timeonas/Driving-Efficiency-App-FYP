@@ -133,6 +133,9 @@ class TripsActivity : AppCompatActivity() {
         showLoading(true)
 
         lifecycleScope.launch {
+            if (!isOnline) {
+                showOfflineMessage()
+            }
             tripRepository.getTripsFlow()
                 .catch { exception ->
                     showLoading(false)
@@ -146,6 +149,14 @@ class TripsActivity : AppCompatActivity() {
                     showLoading(false)
                 }
         }
+    }
+
+    private fun showOfflineMessage() {
+        Snackbar.make(
+            binding.root,
+            "You're offline. Showing cached trips.",
+            Snackbar.LENGTH_LONG
+        ).show()
     }
 
     private fun showToast(message: String) {

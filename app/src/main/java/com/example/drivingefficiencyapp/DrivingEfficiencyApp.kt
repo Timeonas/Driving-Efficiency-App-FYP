@@ -32,7 +32,7 @@ class DrivingEfficiencyApp : Application() {
 
         FirebaseFirestore.getInstance().firestoreSettings = settings
 
-        //Preload profile image if user is logged in
+        // Preload profile image if user is logged in
         FirebaseAuth.getInstance().currentUser?.let {
             applicationScope.launch {
                 ProfileImageCache.preloadProfileImage(applicationContext)

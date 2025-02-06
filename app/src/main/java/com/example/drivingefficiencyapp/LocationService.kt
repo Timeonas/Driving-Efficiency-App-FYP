@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp.location
+package com.example.drivingefficiencyapp
 
 import android.app.*
 import android.content.Intent
@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.ui.StartDriveActivity
 
 class LocationService : Service() {
@@ -31,16 +30,17 @@ class LocationService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Build a notification to inform the user that a trip is in progress
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("Trip in Progress")
-            .setContentText("Recording your trip details")
-            .setSmallIcon(R.drawable.ic_car)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-            .setSilent(true)
-            .build()
+            .setContentTitle("Trip in Progress") //title of the notification
+            .setContentText("Recording your trip details") //text content of the notification
+            .setSmallIcon(R.drawable.ic_car) //small icon for the notification
+            .setContentIntent(pendingIntent) //intent to open StartDriveActivity when the notification is clicked
+            .setOngoing(true) //notification ongoing, so it cannot be dismissed by the user
+            .setAutoCancel(false) //prevent the notification from being auto-cancelled when clicked
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE) // behavior for foreground service
+            .setSilent(true) //notification silent
+            .build() //build the notification
 
         // Start service in foreground with notification
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

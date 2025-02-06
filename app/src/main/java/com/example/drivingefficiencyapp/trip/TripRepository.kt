@@ -8,7 +8,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 class TripRepository {
@@ -17,14 +16,6 @@ class TripRepository {
 
     private fun getUserTripsCollection() = auth.currentUser?.uid?.let { userId ->
         firestore.collection("users").document(userId).collection("trips")
-    }
-
-    private suspend fun ensureUserAuthenticated(): String {
-        return auth.currentUser?.uid ?: run {
-            // Wait briefly for auth to initialize
-            delay(1000)
-            auth.currentUser?.uid
-        } ?: throw IllegalStateException("User not logged in")
     }
 
     suspend fun saveTrip(date: String, duration: String): Result<Trip> = withContext(Dispatchers.IO) {

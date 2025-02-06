@@ -7,10 +7,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -18,9 +15,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.drivingefficiencyapp.LocationService
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
-import com.example.drivingefficiencyapp.location.LocationService
 import com.example.drivingefficiencyapp.trip.TripRepository
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -32,7 +29,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -50,6 +46,10 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
     private val handler = Handler(Looper.getMainLooper())
     private var isRunning = false
     private val tripRepository = TripRepository()
+    private var accelerometerValues = FloatArray(3)
+    private var magnetometerValues = FloatArray(3)
+    private var hasAccelerometerData = false
+    private var hasMagnetometerData = false
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
@@ -275,7 +275,7 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
     private fun setupMapSettings() {
         googleMap?.apply {
-            uiSettings?.apply {
+            uiSettings.apply {
                 isTiltGesturesEnabled = true
                 isMyLocationButtonEnabled = true
             }
@@ -299,10 +299,40 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
+        }
+        sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.let { sensor ->
+            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
+        }
+    }
+
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_ORIENTATION) {
-            currentBearing = event.values[0]
-            pendingLocation?.let { updateMapLocation(it) }
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                System.arraycopy(event.values, 0, accelerometerValues, 0, 3)
+                hasAccelerometerData = true
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                System.arraycopy(event.values, 0, magnetometerValues, 0, 3)
+                hasMagnetometerData = true
+            }
+        }
+
+        if (hasAccelerometerData && hasMagnetometerData) {
+            val rotationMatrix = FloatArray(9)
+            val orientationAngles = FloatArray(3)
+
+            if (SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerValues, magnetometerValues)) {
+                SensorManager.getOrientation(rotationMatrix, orientationAngles)
+                currentBearing = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+                if (currentBearing < 0) {
+                    currentBearing += 360f
+                }
+                pendingLocation?.let { updateMapLocation(it) }
+            }
         }
     }
 
@@ -343,13 +373,6 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                 else -> "Required permission was denied"
             }
             showToast(message)
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        sensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION)?.let { sensor ->
-            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
         }
     }
 
