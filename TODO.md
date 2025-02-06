@@ -5,7 +5,8 @@ Skeleton for App (complete):
 - ~~Store profile picture in Firebase Storage, and retrieve it when a user signs in~~
 
 OBD2 Functionality:
-- Create a simple kotlin app that communicates with the OBD2 device, and reads something as proof of concept
+- Create a simple kotlin app that communicates with the OBD2 device first
+- Parse any kind of information from the OBD2 device
 - Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.
 - Implement into the main project
 
@@ -30,7 +31,7 @@ Appearance (To be done after core app is done):
 
 Project:
 - ~~Sort the Kotlin files into different files and folders to make it more organized~~
-- Develop the README.md, with instructions on how to build and run the app
+- ~~Develop the README.md, with instructions on how to build and run the app~~
 - Fix linting issues
 - ~~Refactor StartDriveActivity.kt to reduce code repetition !!~~
 
