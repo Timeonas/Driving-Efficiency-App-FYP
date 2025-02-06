@@ -56,3 +56,6 @@
 - Removed files and folders that were not being used
 - Added ability to delete trips
 - Made the tracking trip notification not cancelable
+
+## 6/2/25
+- Developed the README.md.

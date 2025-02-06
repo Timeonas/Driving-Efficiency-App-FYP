@@ -4,25 +4,25 @@ An Android application that helps drivers evaluate and improve their driving eff
 
 ## Features
 
-- **Real-time Driving Analysis**
+**Real-time Driving Analysis**
 - Acceleration monitoring using phone sensors
 - Speed tracking via GPS
 - Optional OBD-II integration for detailed vehicle data
 - Live map view during trips
 
-- **Trip Tracking**
+**Trip Tracking**
 - Detailed trip summaries
 - Historical trip data analysis
 - Duration and route recording
 - Offline capability with data syncing
 
-- **User Management**
+**User Management**
 - Secure authentication with Firebase
 - Profile customization
 - Cloud data backup
 - Cross-device synchronization
 
-- **Technical Implementation**
+**Technical Implementation**
 - Location services with background tracking
 - Google Maps integration
 - Sensor data processing
