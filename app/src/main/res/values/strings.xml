@@ -25,4 +25,22 @@
     <string name="no_trips_found">No trips found</string>
     <string name="change_photo">Change Photo</string>
     <string name="delete_trip">Delete Trip</string>
+    <string name="obd_connect">OBD</string>
+    <string name="scan_ready">Ready to Scan</string>
+    <string name="scan_devices">Scan for Devices</string>
+    <string name="connect">Connect</string>
+    <string name="obd_device_list">List of available OBD devices</string>
+    <string name="no_devices_found">No Bluetooth devices found</string>
+    <string name="bluetooth_permission_required">Bluetooth permission required</string>
+    <string name="scanning_devices">Scanning for devices…</string>
+    <string name="no_paired_devices">No paired devices found</string>
+    <string name="select_device">Select a device and tap Connect</string>
+    <string name="permission_denied">Permission denied</string>
+    <string name="connecting">Connecting…</string>
+    <string name="connection_success">Successfully connected to %1$s</string>
+    <string name="connection_failed">Connection failed: %1$s</string>
+    <string name="select_device_first">Please select a device first</string>
+    <string name="device_selected">Selected: %1$s</string>
+    <string name="device_info">%1$s\n%2$s</string>
+    <string name="error_scanning">Error scanning: %1$s</string>
 </resources>

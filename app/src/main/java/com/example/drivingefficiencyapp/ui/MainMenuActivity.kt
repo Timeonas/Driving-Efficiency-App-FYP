@@ -13,6 +13,7 @@ package com.example.drivingefficiencyapp.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.drivingefficiencyapp.ObdConnectActivity
 import com.example.drivingefficiencyapp.databinding.MainMenuActivityBinding
 import com.example.drivingefficiencyapp.profile.ProfileActivity
 import com.example.drivingefficiencyapp.trip.TripsActivity
@@ -46,6 +47,11 @@ class MainMenuActivity : AppCompatActivity() {
         //Button to navigate to the profile page activity
         binding.profileButton.setOnClickListener {
             val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
+        //Temp button to bring the user to OBD connectivity testing
+        binding.obdButton.setOnClickListener {
+            val intent = Intent(this, ObdConnectActivity::class.java)
             startActivity(intent)
         }
     }

@@ -59,3 +59,4 @@
 
 ## 6/2/25
 - Developed the README.md.
+- Start made on the OBD2 implementation activity
