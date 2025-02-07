@@ -6,9 +6,9 @@ An Android application that helps drivers evaluate and improve their driving eff
 
 The goal of the project is to create a mobile app that can be used by anyone driving a car to evaluate
 how efficiently they are driving. Driving efficiency can be improved by accelerating gently, maintaining
-a steady speed, avoiding high speeds and more controlled deceleration. ~~The app will use the sensors
-on a smartphone to collect related data and it will then present a trip summary~~, and it will also be able
-to provide historical analysis. Fuel economy and potential savings can also be incorporated into the
+a steady speed, avoiding high speeds and more controlled deceleration. The app will use ~~the sensors
+on a smartphone~~ OBD2 data to collect related data and it will then present a trip summary, and it will 
+also be able to provide historical analysis. Fuel economy and potential savings can also be incorporated into the
 data presented.
 
 ## Features
