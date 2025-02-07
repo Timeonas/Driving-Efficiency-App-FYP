@@ -39,7 +39,13 @@ data presented.
 - Material Design UI components
 
 ## Architecture
-
+<p align="center">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/kotlin/kotlin-original.svg" alt="kotlin" width="40" height="40"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/android/android-original.svg" alt="android" width="40" height="40"/>
+  <img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" alt="firebase" width="40" height="40"/>
+  <img src="https://www.gstatic.com/devrel-devsite/prod/v2210075187f059b839246c2c03840474501c3c6024a99fb78f6293c7b8318a4b/cloud/images/favicons/onecloud/apple-icon.png" alt="firestore" width="40" height="40"/>
+  <img src="https://www.gstatic.com/devrel-devsite/prod/v2210075187f059b839246c2c03840474501c3c6024a99fb78f6293c7b8318a4b/maps/images/apple-touch-icon.png" alt="googlemaps" width="40" height="40"/>
+</p>
 - **Language:** Kotlin
 - **Platform:** Android
 - **Minimum SDK:** API 21 (Android 5.0)
