@@ -60,3 +60,8 @@
 ## 6/2/25
 - Developed the README.md.
 - Start made on the OBD2 implementation activity
+
+## 7/2/25
+- Refactored obdconnectactivity to only pick up broadcasting BT devices
+- Implemented way to insert bt paring code to connect to bt device.
+- Layout for insert paring code created 

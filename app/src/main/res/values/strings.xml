@@ -43,4 +43,14 @@
     <string name="device_selected">Selected: %1$s</string>
     <string name="device_info">%1$s\n%2$s</string>
     <string name="error_scanning">Error scanning: %1$s</string>
+    <string name="permission_denied_device">Permission denied while adding device</string>
+    <string name="permission_denied_pairing">Permission denied during pairing</string>
+    <string name="pairing_dialog_title">Enter Pairing Code</string>
+    <string name="pair">Pair</string>
+    <string name="cancel">Cancel</string>
+    <string name="bluetooth_adapter_unavailable">Bluetooth adapter not available</string>
+    <string name="permission_denied_scan">Permission denied during scan</string>
+    <string name="permission_denied_connection">Permission denied during connection</string>
+    <string name="paired_successfully">Paired successfully</string>
+    <string name="pairing_failed">Pairing failed</string>
 </resources>

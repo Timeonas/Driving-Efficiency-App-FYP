@@ -16,100 +16,43 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
-import androidx.annotation.RequiresApi
+import android.view.View
+import androidx.appcompat.app.AlertDialog
+import com.example.drivingefficiencyapp.databinding.DialogPairingCodeBinding
 
 class ObdConnectActivity : AppCompatActivity() {
     private lateinit var binding: ObdConnectActivityBinding
+    private val discoveredDevices = mutableSetOf<BluetoothDevice>()
+    private var selectedDevice: BluetoothDevice? = null
+
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
         bluetoothManager.adapter
     }
-    private var selectedDevice: BluetoothDevice? = null
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions.all { it.value }) {
-            scanForDevices()
-        } else {
-            Toast.makeText(this, "Bluetooth permissions required", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        supportActionBar?.hide() //Hid the action bar which references the app name
-        super.onCreate(savedInstanceState)
-        binding = ObdConnectActivityBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setupUI()
-        checkPermissions()
-    }
-
-    private fun setupUI() {
-        binding.scanButton.setOnClickListener {
-            scanForDevices()
-        }
-
-        binding.connectButton.setOnClickListener {
-            selectedDevice?.let { device ->
-                testConnection(device)
-            } ?: Toast.makeText(this, "Please select a device first", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    private fun checkPermissions() {
-        val permissions = arrayOf(
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN
-        )
-
-        if (permissions.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }) {
-            scanForDevices()
-        } else {
-            requestPermissionLauncher.launch(permissions)
-        }
-    }
-
-    private fun scanForDevices() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED) {
-            binding.statusText.text = getString(R.string.bluetooth_permission_required)
-            return
-        }
-
-        binding.deviceList.removeAllViews()
-        binding.statusText.text = getString(R.string.scanning_devices)
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val pairedDevices = try {
-                    bluetoothAdapter?.bondedDevices ?: emptySet()
-                } catch (e: SecurityException) {
-                    withContext(Dispatchers.Main) {
-                        binding.statusText.text = getString(R.string.permission_denied)
-                    }
-                    return@launch
-                }
-
-                withContext(Dispatchers.Main) {
-                    if (pairedDevices.isEmpty()) {
-                        binding.statusText.text = getString(R.string.no_paired_devices)
-                        return@withContext
+    private val discoveryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when(intent.action) {
+                BluetoothDevice.ACTION_FOUND -> {
+                    val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        intent.getParcelableExtra(
+                            BluetoothDevice.EXTRA_DEVICE,
+                            BluetoothDevice::class.java
+                        )
+                    } else {
+                        @Suppress("DEPRECATION")
+                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
                     }
 
-                    pairedDevices.forEach { device ->
-                        addDeviceToList(device)
+                    device?.let {
+                        discoveredDevices.add(it)
+                        addDeviceToList(it)
                     }
-                    binding.statusText.text = getString(R.string.select_device)
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    binding.statusText.text = getString(R.string.error_scanning, e.message)
                 }
             }
         }
@@ -123,32 +66,204 @@ class ObdConnectActivity : AppCompatActivity() {
             return
         }
 
-        val deviceName = try {
-            device.name ?: "Unknown"
+        try {
+            val deviceName = device.name ?: "Unknown"
+            val deviceAddress = device.address
+
+            val button = android.widget.Button(this).apply {
+                text = getString(R.string.device_info, deviceName, deviceAddress)
+                setOnClickListener {
+                    selectedDevice = device
+                    binding.statusText.text = getString(R.string.device_selected, deviceName)
+                }
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 8, 0, 8)
+                }
+            }
+            binding.deviceList.addView(button)
         } catch (e: SecurityException) {
-            "Unknown"
+            binding.statusText.text = getString(R.string.permission_denied_device)
+        }
+    }
+
+    private val pairingReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+
+            when (intent.action) {
+                BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+                    try {
+                        val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableExtra(
+                                BluetoothDevice.EXTRA_DEVICE,
+                                BluetoothDevice::class.java
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        }
+                        device?.let { showPairingDialog(it) }
+                    } catch (e: SecurityException) {
+                        binding.statusText.text = getString(R.string.permission_denied_device)
+                    }
+                }
+                BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                    try {
+                        val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            intent.getParcelableExtra(
+                                BluetoothDevice.EXTRA_DEVICE,
+                                BluetoothDevice::class.java
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        }
+                        when (device?.bondState) {
+                            BluetoothDevice.BOND_BONDED -> {
+                                binding.statusText.text = getString(R.string.paired_successfully)
+                                testConnection(device)
+                            }
+                            BluetoothDevice.BOND_NONE -> {
+                                binding.statusText.text = getString(R.string.pairing_failed)
+                            }
+                        }
+                    } catch (e: SecurityException) {
+                        binding.statusText.text = getString(R.string.permission_denied)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showPairingDialog(device: BluetoothDevice) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED) {
+            return
         }
 
-        val deviceAddress = try {
-            device.address
+        try {
+            val dialogBinding = DialogPairingCodeBinding.inflate(layoutInflater)
+
+            AlertDialog.Builder(this)
+                .setTitle("Enter Pairing Code")
+                .setView(dialogBinding.root)
+                .setPositiveButton("Pair") { _, _ ->
+                    val pin = dialogBinding.pinEditText.text.toString()
+                    if (pin.isNotEmpty()) {
+                        device.setPin(pin.toByteArray())
+                        device.createBond()
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         } catch (e: SecurityException) {
-            "Unknown"
+            binding.statusText.text = getString(R.string.permission_denied_pairing)
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.all { it.value }) {
+            scanForDevices()
+        } else {
+            Toast.makeText(this, "Bluetooth permissions required", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
+        binding = ObdConnectActivityBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setupUI()
+        registerReceivers()
+        checkPermissions()
+    }
+
+    private fun setupUI() {
+        binding.scanButton.setOnClickListener {
+            scanForDevices()
         }
 
-        val button = android.widget.Button(this).apply {
-            text = getString(R.string.device_info, deviceName, deviceAddress)
-            setOnClickListener {
-                selectedDevice = device
-                binding.statusText.text = getString(R.string.device_selected, deviceName)
-            }
-            layoutParams = android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 8, 0, 8)
+        binding.connectButton.setOnClickListener {
+            selectedDevice?.let { device ->
+                connectToDevice(device)
+            } ?: Toast.makeText(this, "Please select a device first", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun registerReceivers() {
+        registerReceiver(discoveryReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
+        registerReceiver(pairingReceiver, IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST))
+        registerReceiver(pairingReceiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
+    }
+
+    private fun checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val permissions = arrayOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+            )
+
+            if (permissions.all {
+                    ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+                }) {
+                scanForDevices()
+            } else {
+                requestPermissionLauncher.launch(permissions)
             }
         }
-        binding.deviceList.addView(button)
+    }
+
+    private fun scanForDevices() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+            != PackageManager.PERMISSION_GRANTED) {
+            binding.statusText.text = getString(R.string.bluetooth_permission_required)
+            return
+        }
+
+        try {
+            if (bluetoothAdapter?.isDiscovering == true) {
+                bluetoothAdapter?.cancelDiscovery()
+            }
+
+            discoveredDevices.clear()
+            binding.deviceList.removeAllViews()
+            binding.statusText.text = getString(R.string.scanning_devices)
+
+            bluetoothAdapter?.startDiscovery() ?: run {
+                binding.statusText.text = getString(R.string.bluetooth_adapter_unavailable)
+            }
+        } catch (e: SecurityException) {
+            binding.statusText.text = getString(R.string.permission_denied_scan)
+        }
+    }
+
+    private fun connectToDevice(device: BluetoothDevice) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
+        try {
+            if (device.bondState == BluetoothDevice.BOND_NONE) {
+                device.createBond()
+            } else {
+                testConnection(device)
+            }
+        } catch (e: SecurityException) {
+            binding.statusText.text = getString(R.string.permission_denied_connection)
+        }
     }
 
     private fun testConnection(device: BluetoothDevice) {
@@ -160,21 +275,16 @@ class ObdConnectActivity : AppCompatActivity() {
             return
         }
 
-        val deviceName = try {
-            device.name ?: "Unknown Device"
-        } catch (e: SecurityException) {
-            "Unknown Device"
-        }
-
         binding.connectButton.isEnabled = false
         binding.statusText.text = getString(R.string.connecting)
-        binding.connectionProgress.visibility = android.view.View.VISIBLE
+        binding.connectionProgress.visibility = View.VISIBLE
 
         lifecycleScope.launch {
             try {
                 val socket = withContext(Dispatchers.IO) {
-                    device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-                        .apply { connect() }
+                    device.createRfcommSocketToServiceRecord(
+                        UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+                    ).apply { connect() }
                 }
 
                 val commands = listOf("ATZ", "ATE0", "ATL0", "ATH0", "ATSP0")
@@ -185,8 +295,8 @@ class ObdConnectActivity : AppCompatActivity() {
                     }
                 }
 
-                binding.statusText.text = getString(R.string.connection_success, deviceName)
-                binding.connectionProgress.visibility = android.view.View.GONE
+                binding.statusText.text = getString(R.string.connection_success, device.name)
+                binding.connectionProgress.visibility = View.GONE
                 binding.connectionStatus.setImageResource(android.R.drawable.presence_online)
 
                 withContext(Dispatchers.IO) {
@@ -194,11 +304,25 @@ class ObdConnectActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 binding.statusText.text = getString(R.string.connection_failed, e.message)
-                binding.connectionProgress.visibility = android.view.View.GONE
+                binding.connectionProgress.visibility = View.GONE
                 binding.connectionStatus.setImageResource(android.R.drawable.presence_busy)
             } finally {
                 binding.connectButton.isEnabled = true
             }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                == PackageManager.PERMISSION_GRANTED) {
+                unregisterReceiver(discoveryReceiver)
+                unregisterReceiver(pairingReceiver)
+                bluetoothAdapter?.cancelDiscovery()
+            }
+        } catch (e: SecurityException) {
+            // Silent fail on cleanup
         }
     }
 }

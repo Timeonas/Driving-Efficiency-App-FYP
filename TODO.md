@@ -18,7 +18,7 @@ Core App:
 - Implement a trip summary screen that shows the user's trip information, such as the distance traveled, 
 the time taken, and the average speed
 - ~~Add icon on map to show the user's current location~~
-- Improve the orientation, okay for now
+- Fix the orientation, right now while driving the map is not oriented correctly for some reason
 - ~~Add ability to delete trips~~
 - ~~Add offline functionality, so that trips are cached locally if the user is offline~~
 - ~~Make the tracking trip notification not cancelable~~
