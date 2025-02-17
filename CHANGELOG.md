@@ -71,3 +71,6 @@
 - Removed the pairing code functionality, as it was not needed, done automatically by the app
 - Simplified the connection process, only the specific obd device is shown in the list
 - Simplified OBD screen
+- OBD finally working, parses the engine rpm, speed and coolant temp in real time.
+- Now it parses constantly, and updates the UI with the new data
+- Fixed the logic associated with the obdactivity screen
