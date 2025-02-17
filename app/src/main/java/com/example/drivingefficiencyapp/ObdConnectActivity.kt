@@ -22,6 +22,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.view.View
+import kotlinx.coroutines.delay
 
 class ObdConnectActivity : AppCompatActivity() {
     private lateinit var binding: ObdConnectActivityBinding
@@ -243,21 +244,57 @@ class ObdConnectActivity : AppCompatActivity() {
                     ).apply { connect() }
                 }
 
-                val commands = listOf("ATZ", "ATE0", "ATL0", "ATH0", "ATSP0")
+                // Initialize OBD with ISO 15765-4 CAN (11 bit ID, 500 kbaud)
+                val initCommands = listOf(
+                    "ATZ",      // Reset
+                    "ATE0",     // Echo off
+                    "ATL0",     // Linefeeds off
+                    "ATH0",     // Headers off
+                    "ATSP6",    // Set Protocol to ISO 15765-4 CAN
+                    "ATDP",     // Display Protocol
+                    "ATS0",     // Spaces off
+                    "ATM0"      // Memory off
+                )
+
                 withContext(Dispatchers.IO) {
-                    commands.forEach { command ->
-                        socket.outputStream.write((command + "\r").toByteArray())
-                        Thread.sleep(100)
+                    val outputStream = socket.outputStream
+                    val inputStream = socket.inputStream
+                    val buffer = ByteArray(1024)
+
+                    // Send initialization commands
+                    initCommands.forEach { command ->
+                        outputStream.write((command + "\r").toByteArray())
+                        delay(100) // Wait for response
+                        val bytes = inputStream.read(buffer)
+                        val response = String(buffer, 0, bytes)
+                        withContext(Dispatchers.Main) {
+                            binding.statusText.text = "Init: $command -> $response"
+                        }
+                    }
+
+                    // Test basic OBD commands
+                    val testCommands = listOf(
+                        "010C",  // RPM
+                        "010D",  // Vehicle speed
+                        "0105"   // Engine coolant temperature
+                    )
+
+                    testCommands.forEach { command ->
+                        outputStream.write((command + "\r").toByteArray())
+                        delay(100)
+                        val bytes = inputStream.read(buffer)
+                        val response = String(buffer, 0, bytes)
+
+                        val parsedValue = parseObdResponse(command, response)
+                        withContext(Dispatchers.Main) {
+                            binding.statusText.text = "Data: $parsedValue"
+                        }
                     }
                 }
 
-                binding.statusText.text = getString(R.string.connection_success, device.name)
                 binding.connectionProgress.visibility = View.GONE
                 binding.connectionStatus.setImageResource(android.R.drawable.presence_online)
 
-                withContext(Dispatchers.IO) {
-                    socket.close()
-                }
             } catch (e: Exception) {
                 binding.statusText.text = getString(R.string.connection_failed, e.message)
                 binding.connectionProgress.visibility = View.GONE
@@ -265,6 +302,26 @@ class ObdConnectActivity : AppCompatActivity() {
             } finally {
                 binding.connectButton.isEnabled = true
             }
+        }
+    }
+
+    private fun parseObdResponse(command: String, response: String): String {
+        val hexValue = response.trim().split(" ").last()
+
+        return when(command) {
+            "010C" -> {  // RPM
+                val value = Integer.parseInt(hexValue, 16) / 4
+                "RPM: $value"
+            }
+            "010D" -> {  // Speed
+                val value = Integer.parseInt(hexValue, 16)
+                "Speed: $value km/h"
+            }
+            "0105" -> {  // Engine temp
+                val value = Integer.parseInt(hexValue, 16) - 40
+                "Temperature: $value°C"
+            }
+            else -> "Unknown command response"
         }
     }
 
