@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp
+package com.example.drivingefficiencyapp.obd
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.ObdConnectActivityBinding
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -56,6 +57,12 @@ class ObdConnectActivity : AppCompatActivity() {
     private val obdName = "OBDII"
     private var isScanning = false
     private var discoveredOBDDevice: BluetoothDevice? = null
+
+    // GearCalculator variables
+    private var currentRpm = 0
+    private var currentSpeed: Double = 0.0
+
+    private val gearCalculator = GearCalculator()
 
 
     private val discoveryReceiver = object : BroadcastReceiver() {
@@ -584,8 +591,8 @@ class ObdConnectActivity : AppCompatActivity() {
                         Log.d("OBD_PARSER", "Parsing RPM.  dataBytes: $dataBytes")
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
-                        val rpm = ((256 * a) + b) / 4
-                        "$rpm RPM"
+                        currentRpm =  ((256 * a) + b) / 4
+                        "$currentRpm RPM"
                     } else {
                         "- (Invalid Data - Short)"
                     }
@@ -593,8 +600,9 @@ class ObdConnectActivity : AppCompatActivity() {
 
                 "010D" -> { // Speed
                     if (dataBytes.length >= 2) {
-                        val speed = Integer.parseInt(dataBytes.substring(0, 2), 16)
-                        "$speed km/h"
+                        currentSpeed = Integer.parseInt(dataBytes.substring(0, 2), 16).toDouble()
+                        val currentGear = gearCalculator.calculateGear(currentRpm, currentSpeed)
+                        "$currentSpeed km/h (Gear: $currentGear)"
                     } else {
                         "- (Invalid Data - Short)"
                     }

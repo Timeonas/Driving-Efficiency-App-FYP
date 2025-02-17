@@ -81,7 +81,7 @@
         </activity>
 
         <activity
-            android:name=".ObdConnectActivity"
+            android:name=".obd.ObdConnectActivity"
             android:exported="false">
         </activity>
     </application>

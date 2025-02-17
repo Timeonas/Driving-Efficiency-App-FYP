@@ -74,3 +74,4 @@
 - OBD finally working, parses the engine rpm, speed and coolant temp in real time.
 - Now it parses constantly, and updates the UI with the new data
 - Fixed the logic associated with the obdactivity screen
+- Start made to gear logic

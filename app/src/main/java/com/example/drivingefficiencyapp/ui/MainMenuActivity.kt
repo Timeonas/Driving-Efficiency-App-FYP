@@ -13,7 +13,7 @@ package com.example.drivingefficiencyapp.ui
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.drivingefficiencyapp.ObdConnectActivity
+import com.example.drivingefficiencyapp.obd.ObdConnectActivity
 import com.example.drivingefficiencyapp.databinding.MainMenuActivityBinding
 import com.example.drivingefficiencyapp.profile.ProfileActivity
 import com.example.drivingefficiencyapp.trip.TripsActivity
