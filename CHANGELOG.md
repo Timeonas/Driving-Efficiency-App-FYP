@@ -65,3 +65,9 @@
 - Refactored obdconnectactivity to only pick up broadcasting BT devices
 - Implemented way to insert bt paring code to connect to bt device.
 - Layout for insert paring code created 
+
+## 17/2/25
+- Removed multiple instances of the same bt device appearing in the list
+- Removed the pairing code functionality, as it was not needed, done automatically by the app
+- Simplified the connection process, only the specific obd device is shown in the list
+- Simplified OBD screen

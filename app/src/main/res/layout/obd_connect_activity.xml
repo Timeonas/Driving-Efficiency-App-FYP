@@ -3,71 +3,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:gravity="center">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <ImageView
+        android:id="@+id/obd_icon"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@drawable/ic_car"
+        android:layout_marginBottom="24dp"/>
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:text="@string/scan_ready"
+        android:textSize="18sp"
+        android:textAlignment="center"
+        android:layout_marginBottom="24dp"/>
 
-        <TextView
-            android:id="@+id/status_text"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/scan_ready"
-            android:textSize="16sp" />
+    <ProgressBar
+        android:id="@+id/connection_progress"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp"/>
 
-        <ProgressBar
-            android:id="@+id/connection_progress"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:visibility="gone" />
-
-        <ImageView
-            android:id="@+id/connection_status"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
+    <ImageView
+        android:id="@+id/connection_status"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="24dp"/>
 
     <Button
         android:id="@+id/scan_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/scan_devices" />
-
-    <ScrollView
-        android:id="@+id/device_scroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="16dp"
-        android:contentDescription="@string/obd_device_list">
-
-        <LinearLayout
-            android:id="@+id/device_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/empty_device_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/no_devices_found"
-                android:gravity="center"
-                android:visibility="gone"/>
-        </LinearLayout>
-    </ScrollView>
+        android:text="Search for OBD Device"
+        android:padding="16dp"/>
 
     <Button
         android:id="@+id/connect_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/connect" />
+        android:text="Connect"
+        android:padding="16dp"
+        android:enabled="false"/>
 
 </LinearLayout>

@@ -22,12 +22,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.view.View
-import androidx.appcompat.app.AlertDialog
-import com.example.drivingefficiencyapp.databinding.DialogPairingCodeBinding
 
 class ObdConnectActivity : AppCompatActivity() {
     private lateinit var binding: ObdConnectActivityBinding
-    private val discoveredDevices = mutableSetOf<BluetoothDevice>()
+    private val discoveredDevices = mutableMapOf<String, BluetoothDevice>()
     private var selectedDevice: BluetoothDevice? = null
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
@@ -37,6 +35,11 @@ class ObdConnectActivity : AppCompatActivity() {
 
     private val discoveryReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+
             when(intent.action) {
                 BluetoothDevice.ACTION_FOUND -> {
                     val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -50,15 +53,22 @@ class ObdConnectActivity : AppCompatActivity() {
                     }
 
                     device?.let {
-                        discoveredDevices.add(it)
-                        addDeviceToList(it)
+                        try {
+                            if (it.address == "66:1E:32:30:AF:15" && it.name == "OBDII"
+                                && !discoveredDevices.containsKey(it.address)) {
+                                discoveredDevices[it.address] = it
+                                onDeviceFound(it)
+                            }
+                        } catch (e: SecurityException) {
+                            binding.statusText.text = getString(R.string.permission_denied_device)
+                        }
                     }
                 }
             }
         }
     }
 
-    private fun addDeviceToList(device: BluetoothDevice) {
+    private fun onDeviceFound(device: BluetoothDevice) {
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.BLUETOOTH_CONNECT
@@ -67,23 +77,9 @@ class ObdConnectActivity : AppCompatActivity() {
         }
 
         try {
-            val deviceName = device.name ?: "Unknown"
-            val deviceAddress = device.address
-
-            val button = android.widget.Button(this).apply {
-                text = getString(R.string.device_info, deviceName, deviceAddress)
-                setOnClickListener {
-                    selectedDevice = device
-                    binding.statusText.text = getString(R.string.device_selected, deviceName)
-                }
-                layoutParams = android.widget.LinearLayout.LayoutParams(
-                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    setMargins(0, 8, 0, 8)
-                }
-            }
-            binding.deviceList.addView(button)
+            selectedDevice = device
+            binding.statusText.text = getString(R.string.device_found)
+            binding.connectButton.isEnabled = true
         } catch (e: SecurityException) {
             binding.statusText.text = getString(R.string.permission_denied_device)
         }
@@ -97,22 +93,6 @@ class ObdConnectActivity : AppCompatActivity() {
             }
 
             when (intent.action) {
-                BluetoothDevice.ACTION_PAIRING_REQUEST -> {
-                    try {
-                        val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            intent.getParcelableExtra(
-                                BluetoothDevice.EXTRA_DEVICE,
-                                BluetoothDevice::class.java
-                            )
-                        } else {
-                            @Suppress("DEPRECATION")
-                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                        }
-                        device?.let { showPairingDialog(it) }
-                    } catch (e: SecurityException) {
-                        binding.statusText.text = getString(R.string.permission_denied_device)
-                    }
-                }
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                     try {
                         val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -138,34 +118,6 @@ class ObdConnectActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
-    }
-
-    private fun showPairingDialog(device: BluetoothDevice) {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
-        try {
-            val dialogBinding = DialogPairingCodeBinding.inflate(layoutInflater)
-
-            AlertDialog.Builder(this)
-                .setTitle("Enter Pairing Code")
-                .setView(dialogBinding.root)
-                .setPositiveButton("Pair") { _, _ ->
-                    val pin = dialogBinding.pinEditText.text.toString()
-                    if (pin.isNotEmpty()) {
-                        device.setPin(pin.toByteArray())
-                        device.createBond()
-                    }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } catch (e: SecurityException) {
-            binding.statusText.text = getString(R.string.permission_denied_pairing)
         }
     }
 
@@ -204,7 +156,6 @@ class ObdConnectActivity : AppCompatActivity() {
 
     private fun registerReceivers() {
         registerReceiver(discoveryReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-        registerReceiver(pairingReceiver, IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST))
         registerReceiver(pairingReceiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
     }
 
@@ -238,12 +189,17 @@ class ObdConnectActivity : AppCompatActivity() {
             }
 
             discoveredDevices.clear()
-            binding.deviceList.removeAllViews()
             binding.statusText.text = getString(R.string.scanning_devices)
 
-            bluetoothAdapter?.startDiscovery() ?: run {
-                binding.statusText.text = getString(R.string.bluetooth_adapter_unavailable)
+            // Find the specific OBD device
+            bluetoothAdapter?.bondedDevices?.find { device ->
+                device.address == "66:1E:32:30:AF:15" && device.name == "OBDII"
+            }?.let { device ->
+                discoveredDevices[device.address] = device
+                onDeviceFound(device)
             }
+
+            bluetoothAdapter?.startDiscovery()
         } catch (e: SecurityException) {
             binding.statusText.text = getString(R.string.permission_denied_scan)
         }
