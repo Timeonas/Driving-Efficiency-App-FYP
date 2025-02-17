@@ -5,9 +5,11 @@ Skeleton for App (complete):
 - ~~Store profile picture in Firebase Storage, and retrieve it when a user signs in~~
 
 OBD2 Functionality:
-- Create a simple kotlin app that communicates with the OBD2 device first
-- Parse any kind of information from the OBD2 device
-- Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.
+- ~~Create a simple kotlin app that communicates with the OBD2 device first~~
+- ~~Parse any kind of information from the OBD2 device~~
+- ~~Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.~~
+- Using rpm, gear ratios and speed, estimate gear
+- Implement fuel related parameters
 - Implement into the main project
 
 Core App:
