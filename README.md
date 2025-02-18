@@ -69,8 +69,8 @@ data presented.
 The app supports ELM327-based OBD-II adapters for enhanced vehicle data collection:
 - Real-time engine data
 - Fuel consumption metrics
-- Vehicle diagnostics
-- Performance monitoring
+
+User will need to enter their specific EML327 BT Adapter information in the obdconnectactivity.kt file.
 
 ## Future Enhancements
 
