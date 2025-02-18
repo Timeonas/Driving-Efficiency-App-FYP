@@ -75,3 +75,7 @@
 - Now it parses constantly, and updates the UI with the new data
 - Fixed the logic associated with the obdactivity screen
 - Start made to gear logic
+
+## 18/2/25
+- Fix to final gear 2 logic
+- Implemented UI changes to add trip summary info (fuel related) and more obd data
