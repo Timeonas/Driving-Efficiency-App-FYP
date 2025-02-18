@@ -5,10 +5,6 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -19,7 +15,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.ObdConnectActivityBinding
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -31,7 +26,10 @@ class ObdConnectActivity : AppCompatActivity() {
 
     private lateinit var binding: ObdConnectActivityBinding
     private var obdSocket: BluetoothSocket? = null
-    private var readingJob: Job? = null // Store the coroutine job for cancellation
+    private var readingJob: Job? = null
+    private var currentRpm = 0
+    private var currentSpeed: Double = 0.0
+    private val gearCalculator = GearCalculator()
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
@@ -41,7 +39,6 @@ class ObdConnectActivity : AppCompatActivity() {
     private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN,
             Manifest.permission.ACCESS_FINE_LOCATION
         )
     } else {
@@ -52,133 +49,15 @@ class ObdConnectActivity : AppCompatActivity() {
         )
     }
 
-    // OBD Specific Info
-    private val obdMacAddress = "66:1E:32:30:AF:15"
-    private val obdName = "OBDII"
-    private var isScanning = false
-    private var discoveredOBDDevice: BluetoothDevice? = null
-
-    // GearCalculator variables
-    private var currentRpm = 0
-    private var currentSpeed: Double = 0.0
-
-    private val gearCalculator = GearCalculator()
-
-
-    private val discoveryReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                Log.e("ObdConnectActivity", "Bluetooth Connect permission missing")
-                return
-            }
-
-            when (intent.action) {
-                BluetoothDevice.ACTION_FOUND -> {
-                    val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                    }
-                    device?.let {
-                        Log.d("ObdConnectActivity", "Discovered device: ${it.name}, ${it.address}")
-                        if (it.address == obdMacAddress && it.name == obdName) {
-                            Log.d("ObdConnectActivity", "Target OBD-II device found.")
-                            discoveredOBDDevice = it
-                            lifecycleScope.launch(Dispatchers.Main) {
-                                binding.statusText.text = "Device found. Tap Start."
-                                updateButtonStates(deviceFound = true)
-                            }
-                            isScanning = false
-                            bluetoothAdapter?.cancelDiscovery()
-
-                        }
-                    }
-                }
-                BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-                    isScanning = true
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        binding.statusText.text = getString(R.string.scanning_devices)
-                        updateButtonStates(isScanning = true)
-                    }
-                    Log.d("ObdConnectActivity", "Bluetooth discovery started.")
-                }
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                    Log.d("ObdConnectActivity", "Bluetooth discovery finished. isScanning: $isScanning")
-                    if (isScanning) {
-                        isScanning = false
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            if (discoveredOBDDevice == null) {
-                                binding.statusText.text = "Scan complete. Device not found."
-                            }
-                            updateButtonStates()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    private val pairingReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                Log.e("ObdConnectActivity", "Bluetooth connect permissions error")
-                return
-            }
-
-            when (intent.action) {
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                    val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        intent.getParcelableExtra(
-                            BluetoothDevice.EXTRA_DEVICE,
-                            BluetoothDevice::class.java
-                        )
-                    } else {
-                        @Suppress("DEPRECATION")
-                        intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
-                    }
-                    if (device?.address == obdMacAddress) {
-                        when (device.bondState) {
-                            BluetoothDevice.BOND_BONDING -> {
-                                Log.d("ObdConnectActivity", "Pairing in progress...")
-                                binding.statusText.text = "Pairing in progress..."
-                                updateButtonStates(isPairing = true) // Disable buttons
-                            }
-
-                            BluetoothDevice.BOND_BONDED -> {
-                                Log.d("ObdConnectActivity", "Successfully paired.")
-                                binding.statusText.text =
-                                    "Device paired. Tap Start." // Clear instructions
-                                discoveredOBDDevice = device //Store the now paired device
-                                updateButtonStates(deviceFound = true) // Enable "Start"
-
-                            }
-
-                            BluetoothDevice.BOND_NONE -> {
-                                Log.d("ObdConnectActivity", "Pairing failed.")
-                                binding.statusText.text = "Pairing failed"
-                                updateButtonStates() // Re-enable buttons
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    private val OBD_MAC_ADDRESS = "66:1E:32:30:AF:15"
+    private val OBD_NAME = "OBDII"
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions.all { it.value }) {
-        } else {
+        if (!permissions.all { it.value }) {
             Toast.makeText(this, "Bluetooth permissions are required.", Toast.LENGTH_LONG).show()
-            binding.statusText.text = "Bluetooth permissions required." // Update UI
+            binding.statusText.text = "Bluetooth permissions required."
         }
     }
 
@@ -189,49 +68,20 @@ class ObdConnectActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setupUI()
-        registerReceivers()
-        checkPermissions() // Only check permissions
+        checkPermissions()
 
-        // Set initial UI state:
-        binding.statusText.text = "Disconnected"
+        // Set initial UI state
+        binding.statusText.text = "Ensure OBD2 is paired and press connect"
         binding.rpmText.text = "- RPM"
         binding.speedText.text = "- km/h"
         binding.tempText.text = "- °C"
         binding.connectionStatus.setImageResource(android.R.drawable.presence_offline)
-        updateButtonStates() // Initialize button states
-
-        checkPermissions()
-
-        // After permissions are granted, check paired devices
-        if (hasRequiredPermissions()) {
-            checkPairedDevices()
-        }
+        updateButtonStates()
     }
 
-
     private fun setupUI() {
-        binding.scanButton.setOnClickListener {
-            if (!isScanning) {
-                scanForDevices()
-            }
-        }
-
         binding.connectButton.setOnClickListener {
-            discoveredOBDDevice?.let { device ->
-                if (device.bondState == BluetoothDevice.BOND_NONE) {
-                    if (ContextCompat.checkSelfPermission(
-                            this@ObdConnectActivity,
-                            Manifest.permission.BLUETOOTH_CONNECT
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        device.createBond()
-                    }
-                } else {
-                    startConnection(device) // Now only attempts connection
-                }
-            } ?: run {
-                Toast.makeText(this, "No device found to connect to.", Toast.LENGTH_SHORT).show()
-            }
+            findAndConnectToObd()
         }
 
         binding.disconnectButton.setOnClickListener {
@@ -239,14 +89,27 @@ class ObdConnectActivity : AppCompatActivity() {
         }
     }
 
-    private fun registerReceivers() {
-        registerReceiver(discoveryReceiver, IntentFilter(BluetoothDevice.ACTION_FOUND))
-        registerReceiver(discoveryReceiver, IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED))
-        registerReceiver(
-            discoveryReceiver,
-            IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-        )
-        registerReceiver(pairingReceiver, IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED))
+    private fun findAndConnectToObd() {
+        if (!hasRequiredPermissions()) {
+            checkPermissions()
+            return
+        }
+
+        lifecycleScope.launch {
+            try {
+                val pairedDevices = bluetoothAdapter?.bondedDevices
+                val obdDevice = pairedDevices?.find { it.address == OBD_MAC_ADDRESS && it.name == OBD_NAME }
+
+                if (obdDevice == null) {
+                    binding.statusText.text = "Failed to connect. Please ensure the OBD2 device is paired to the phone"
+                    return@launch
+                }
+
+                startConnection(obdDevice)
+            } catch (e: SecurityException) {
+                binding.statusText.text = "Failed to access Bluetooth devices"
+            }
+        }
     }
 
     private fun checkPermissions() {
@@ -259,97 +122,11 @@ class ObdConnectActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkPairedDevices() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-            != PackageManager.PERMISSION_GRANTED) {
-            Log.e("ObdConnectActivity", "Missing BLUETOOTH_CONNECT permission")
-            return
-        }
-
-        try {
-            bluetoothAdapter?.bondedDevices?.forEach { device ->
-                Log.d("ObdConnectActivity", "Found paired device: ${device.name}, ${device.address}")
-                if (device.address == obdMacAddress && device.name == obdName) {
-                    Log.d("ObdConnectActivity", "Found paired OBD device!")
-                    discoveredOBDDevice = device
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        binding.statusText.text = "Device already paired. Tap Start."
-                        updateButtonStates(deviceFound = true)
-                        binding.scanButton.isEnabled = false
-                        binding.scanButton.alpha = 0.5f
-                    }
-                    return@forEach
-                }
-            }
-        } catch (e: SecurityException) {
-            Log.e("ObdConnectActivity", "Security exception when checking paired devices: ${e.message}")
-        }
-    }
-
-    private fun scanForDevices() {
-        if (!hasRequiredPermissions()) {
-            Log.e("ObdConnectActivity", "Missing required permissions")
-            return
-        }
-
-        checkPairedDevices()
-
-        // If device already found in paired devices, no need to scan
-        if (discoveredOBDDevice != null) {
-            updateButtonStates(deviceFound = true)  // Update button states
-            return
-        }
-
-        val adapter = bluetoothAdapter ?: run {
-            Log.e("ObdConnectActivity", "Bluetooth adapter is null")
-            return
-        }
-
-        if (adapter.isDiscovering) {
-            try {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) ==
-                    PackageManager.PERMISSION_GRANTED) {
-                    adapter.cancelDiscovery()
-                    isScanning = false
-                } else {
-                    Log.e("ObdConnectActivity", "Missing BLUETOOTH_SCAN permission")
-                    return
-                }
-            } catch (e: SecurityException) {
-                Log.e("ObdConnectActivity", "Security exception when canceling discovery: ${e.message}")
-                return
-            }
-        }
-
-        isScanning = true
-        updateButtonStates(isScanning = true)
-        binding.statusText.text = "Scanning for devices..."
-
-        // Start discovery with timeout
-        adapter.startDiscovery()
-
-        lifecycleScope.launch {
-            delay(10000) // 10-second timeout
-            if (isScanning) {
-                isScanning = false
-                adapter.cancelDiscovery()
-                withContext(Dispatchers.Main) {
-                    if (discoveredOBDDevice == null) {
-                        binding.statusText.text = "Scan timed out. Device not found."
-                        updateButtonStates()
-                    }
-                }
-                Log.d("ObdConnectActivity", "Bluetooth discovery timed out.")
-            }
-        }
-    }
-
     private fun hasRequiredPermissions(): Boolean {
         return requiredPermissions.all {
             ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
-
 
     private fun startConnection(device: BluetoothDevice) { // Renamed function
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -630,64 +407,38 @@ class ObdConnectActivity : AppCompatActivity() {
     }
 
     private fun disconnectObd() {
-        readingJob?.cancel() // Cancel the reading coroutine
+        readingJob?.cancel()
         lifecycleScope.launch {
             try {
-                obdSocket?.close() // Close the socket
+                obdSocket?.close()
             } catch (e: IOException) {
                 Log.e("ObdConnectActivity", "Error closing socket: ${e.message}")
             } finally {
-                obdSocket = null // Ensure socket is null after closing
+                obdSocket = null
                 withContext(Dispatchers.Main) {
-                    // Since the device is still paired, maintain that state
-                    if (discoveredOBDDevice != null) {
-                        binding.statusText.text = "Device already paired. Tap Start."
-                        updateButtonStates(deviceFound = true)
-                    } else {
-                        binding.statusText.text = "Disconnected"
-                        updateButtonStates()
-                    }
-
-                    // Reset the readings
+                    binding.statusText.text = "Ensure OBD2 is paired and press connect"
                     binding.rpmText.text = "- RPM"
                     binding.speedText.text = "- km/h"
                     binding.tempText.text = "- °C"
                     binding.connectionStatus.setImageResource(android.R.drawable.presence_offline)
+                    updateButtonStates()
                 }
             }
         }
     }
 
-    private fun updateButtonStates(
-        isScanning: Boolean = false,
-        isPairing: Boolean = false,
-        isConnecting: Boolean = false,
-        deviceFound: Boolean = false
-    ) {
+    private fun updateButtonStates(isConnecting: Boolean = false) {
         binding.apply {
             if (obdSocket != null) {
-                scanButton.isEnabled = false
                 connectButton.isEnabled = false
                 disconnectButton.isEnabled = true
-            }
-            else if (deviceFound) {
-                scanButton.isEnabled = false
-                connectButton.isEnabled = true
-                disconnectButton.isEnabled = false
-            }
-            // No device found/paired and no connection
-            else {
-                scanButton.isEnabled = !isScanning && !isPairing && !isConnecting
-                connectButton.isEnabled = false
+            } else {
+                connectButton.isEnabled = !isConnecting
                 disconnectButton.isEnabled = false
             }
 
-            // Update button appearance
-            scanButton.alpha = if (scanButton.isEnabled) 1.0f else 0.5f
             connectButton.alpha = if (connectButton.isEnabled) 1.0f else 0.5f
             disconnectButton.alpha = if (disconnectButton.isEnabled) 1.0f else 0.5f
-
-            //how/hide progress indicator
             connectionProgress.visibility = if (isConnecting) View.VISIBLE else View.GONE
         }
     }
