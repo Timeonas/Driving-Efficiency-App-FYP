@@ -3,7 +3,7 @@ package com.example.drivingefficiencyapp.obd
 class GearCalculator(
     wheelDiameter: Double = 0.6096,
     private val finalDriveRatioI: Double = 3.68,  // For gears 1-4
-    private val finalDriveRatioII: Double = 3.44, // For gears 5-6
+    private val finalDriveRatioII: Double = 2.92, // For gears 5-6
     private val idleRpmUpperThreshold: Int = 1000,
     private val speedThreshold: Int = 3,
     private val rpmChangeThreshold: Int = 200,
