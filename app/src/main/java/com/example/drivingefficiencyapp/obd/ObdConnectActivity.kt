@@ -72,9 +72,6 @@ class ObdConnectActivity : AppCompatActivity() {
 
         // Set initial UI state
         binding.statusText.text = "Ensure OBD2 is paired and press connect"
-        binding.rpmText.text = "- RPM"
-        binding.speedText.text = "- km/h"
-        binding.tempText.text = "- °C"
         binding.connectionStatus.setImageResource(android.R.drawable.presence_offline)
         updateButtonStates()
     }

@@ -54,4 +54,7 @@
     <string name="paired_successfully">Paired successfully</string>
     <string name="pairing_failed">Pairing failed</string>
     <string name="device_found">OBDII device found! Click connect to establish connection.</string>
+    <string name="default_rpm">- RPM</string>
+    <string name="default_speed">- km/h</string>
+    <string name="default_temp">- °C</string>
 </resources>
