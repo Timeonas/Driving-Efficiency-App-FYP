@@ -47,8 +47,8 @@ class ObdConnectActivity : AppCompatActivity() {
         )
     }
 
-    private val OBD_MAC_ADDRESS = "66:1E:32:30:AF:15" // Replace with YOUR OBD-II adapter's MAC address.
-    private val OBD_NAME = "OBDII" // Replace with your OBD2 device name.
+    private val OBD_MAC_ADDRESS = "66:1E:32:30:AF:15" // !!!!Replace with YOUR OBD-II adapter's MAC address!!!
+    private val OBD_NAME = "OBDII" // !!!Replace with your OBD2 device name.!!!
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -103,7 +103,6 @@ class ObdConnectActivity : AppCompatActivity() {
 
                 startConnection(obdDevice)
             } catch (e: SecurityException) {
-                // Handle the case where you don't have permission to access bonded devices.
                 withContext(Dispatchers.Main) {
                     binding.statusText.text = "Failed to access Bluetooth devices"
                 }
@@ -141,7 +140,6 @@ class ObdConnectActivity : AppCompatActivity() {
                                 Manifest.permission.BLUETOOTH_CONNECT
                             ) != PackageManager.PERMISSION_GRANTED
                         ) {
-                            // Handle missing permission (shouldn't happen if we checked earlier).
                             throw SecurityException("Bluetooth connect permission not granted")
                         }
                         // Attempt to create and connect the socket.
@@ -149,7 +147,7 @@ class ObdConnectActivity : AppCompatActivity() {
                             device.createRfcommSocketToServiceRecord(
                                 UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") // Standard OBD-II UUID.
                             ).apply {
-                                connect() // This is a blocking call.
+                                connect()
                             }
                         } catch (e: SecurityException) {
                             Log.e("ObdConnectActivity", "Security exception creating socket: ${e.message}")
@@ -170,7 +168,6 @@ class ObdConnectActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
-                // Handle connection failures (timeout, IOException, etc.).
                 withContext(Dispatchers.Main) {
                     binding.statusText.text = "Connection failed: ${e.message}"
                     binding.connectionProgress.visibility = View.GONE
@@ -191,7 +188,6 @@ class ObdConnectActivity : AppCompatActivity() {
             val inputStream = socket.inputStream
             val buffer = ByteArray(1024) // Buffer for reading responses.
 
-            // Initialization commands (as strings).
             val initCommands = listOf(
                 "ATZ",      // Reset ELM327.
                 "ATE0",     // Echo off.
@@ -212,7 +208,6 @@ class ObdConnectActivity : AppCompatActivity() {
                     val response = String(buffer, 0, bytes).trim()
                     Log.d("ObdConnectActivity", "OBD Init: $command -> $response")
 
-                    // Basic response validation (adjust based on your OBD-II adapter's responses).
                     if (!response.contains("OK") && !response.uppercase().contains("ELM") && !response.uppercase().contains("AUTO")) {
                         withContext(Dispatchers.Main) {
                             binding.statusText.text = "Init failed: $command -> $response"
@@ -228,8 +223,6 @@ class ObdConnectActivity : AppCompatActivity() {
                 }
             }
 
-            // "Priming" read (send a command and discard the response).  This is often
-            // necessary to get the ELM327 adapter ready to receive further commands.
             try {
                 outputStream.write(("0100\r").toByteArray()) // Request supported PIDs (Mode 01, PID 00).
                 delay(300)
@@ -237,8 +230,6 @@ class ObdConnectActivity : AppCompatActivity() {
                 Log.d("ObdConnectActivity", "Priming read complete.")
             } catch (e: IOException) {
                 Log.e("ObdConnectActivity", "Priming read error: ${e.message}")
-                // It's not *strictly* critical if this fails, so we won't throw an exception here.
-                //  But log the error.
             }
         }
     }
@@ -254,11 +245,11 @@ class ObdConnectActivity : AppCompatActivity() {
                 binding.speedText.text = data.speed
                 binding.tempText.text = data.temperature
                 binding.gearText.text = data.gear
-                binding.fuelRateText.text = data.instantFuelRate // Correct ID
-                binding.avgFuelConsText.text = data.averageFuelConsumption // Correct ID
-                binding.avgSpeedText.text = data.averageSpeed // Correct ID
-                binding.distanceText.text = data.distanceTraveled // Correct ID
-                binding.fuelUsedText.text = data.fuelUsed // Correct ID
+                binding.fuelRateText.text = data.instantFuelRate
+                binding.avgFuelConsText.text = data.averageFuelConsumption
+                binding.avgSpeedText.text = data.averageSpeed
+                binding.distanceText.text = data.distanceTraveled
+                binding.fuelUsedText.text = data.fuelUsed
                 binding.instantFuelConsumptionText.text = data.instantFuelConsumption
             }
         }

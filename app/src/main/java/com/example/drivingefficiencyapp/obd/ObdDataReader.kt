@@ -66,7 +66,6 @@ class ObdDataReader(
                     val tempStr = sendAndParseCommand("0105")
                     val mafStr = sendAndParseCommand("0110")
 
-                    // --- Parse and Update Current Values ---
                     val rpmValue = parseNumericValue(rpmStr).toInt()
                     val speedValue = parseNumericValue(speedStr)
                     val mafValue = parseNumericValue(mafStr)
