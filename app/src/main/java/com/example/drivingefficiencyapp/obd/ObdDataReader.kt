@@ -41,7 +41,6 @@ class ObdDataReader(
         val gear: String = "- Gear", // Gear as String for display
         val temperature: String = "- °C",
         val instantFuelRate: String = "- L/h",
-        val instantFuelConsumption: String = "- L/100km",
         val averageFuelConsumption: String = "- L/100km",
         val averageSpeed: String = "- km/h",
         val distanceTraveled: String = "- km",
@@ -96,12 +95,6 @@ class ObdDataReader(
                     totalDistance += instantDistance
                     totalFuelUsed += instantFuelLiters
 
-                    val instantFuelConsumption = if (currentSpeed > 0) {
-                        (instantFuelLiters / instantDistance) * 100.0
-                    } else {
-                        Double.POSITIVE_INFINITY
-                    }
-
                     val averageFuelConsumption = if (totalDistance > 0) {
                         (totalFuelUsed / totalDistance) * 100.0
                     } else {
@@ -133,7 +126,6 @@ class ObdDataReader(
                             gear = "Gear: $currentGear",
                             temperature = tempStr,
                             instantFuelRate = String.format("%.2f L/h", instantFuelRate),
-                            instantFuelConsumption = if (instantFuelConsumption.isInfinite()) "∞ L/100km" else String.format("%.2f L/100km", instantFuelConsumption),
                             averageFuelConsumption = String.format("%.2f L/100km", averageFuelConsumption),
                             averageSpeed = String.format("%.2f km/h", averageSpeed),
                             distanceTraveled = String.format("%.3f km", totalDistance),
@@ -156,7 +148,6 @@ class ObdDataReader(
                             gear = "Gear: (Error)",
                             temperature = "- °C (Error)",
                             instantFuelRate = "- L/h (Error)",
-                            instantFuelConsumption = "- L/100km (Error)",
                             averageFuelConsumption = "- L/100km (Error)",
                             averageSpeed = "- km/h (Error)",
                             distanceTraveled = "- km (Error)",

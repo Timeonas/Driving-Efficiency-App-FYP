@@ -84,3 +84,4 @@
 ## 24/2/25
 - Started implementing fuel logic
 - Fuel flow working
+- Removed instant fuel consumption, as its highly inaccurate using MAF calculations.

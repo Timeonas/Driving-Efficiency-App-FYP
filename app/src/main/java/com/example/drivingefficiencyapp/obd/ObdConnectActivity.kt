@@ -250,7 +250,6 @@ class ObdConnectActivity : AppCompatActivity() {
                 binding.avgSpeedText.text = data.averageSpeed
                 binding.distanceText.text = data.distanceTraveled
                 binding.fuelUsedText.text = data.fuelUsed
-                binding.instantFuelConsumptionText.text = data.instantFuelConsumption
             }
         }
 
@@ -289,12 +288,11 @@ class ObdConnectActivity : AppCompatActivity() {
                     binding.speedText.text = "- km/h"
                     binding.tempText.text = "- °C"
                     binding.gearText.text = "- Gear"
-                    binding.fuelRateText.text = "- L/h"          // Correct ID
-                    binding.avgFuelConsText.text = "- L/100km"  // Correct ID
-                    binding.avgSpeedText.text = "- km/h"        // Correct ID
-                    binding.distanceText.text = "- km"          // Correct ID
-                    binding.fuelUsedText.text = "- L"          // Correct ID
-                    binding.instantFuelConsumptionText.text = "- L/100km" //Added
+                    binding.fuelRateText.text = "- L/h"
+                    binding.avgFuelConsText.text = "- L/100km"
+                    binding.avgSpeedText.text = "- km/h"
+                    binding.distanceText.text = "- km"
+                    binding.fuelUsedText.text = "- L"
                     binding.connectionStatus.setImageResource(android.R.drawable.presence_offline)
                     updateButtonStates() // Update button states after disconnection.
                 }
