@@ -8,13 +8,13 @@ OBD2 Functionality:
 - ~~Create a simple kotlin app that communicates with the OBD2 device first~~
 - ~~Parse any kind of information from the OBD2 device~~
 - ~~Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.~~
-- Using rpm, gear ratios and speed, estimate gear
+- ~~Using rpm, gear ratios and speed, estimate gear~~
 - Implement fuel related parameters
 - Implement into the main project
 
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
-- Parse basic information from the user's phone, such as the current speed, and display it on the screen
+- ~~Parse basic information from the user's phone, such as the current speed, and display it on the screen~~
 - ~~Tilt the map view so its in 3d mode~~
 - ~~Orient the map view so that it is always facing the direction the user is driving~~
 - Implement a trip summary screen that shows the user's trip information, such as the distance traveled, 

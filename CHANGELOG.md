@@ -80,3 +80,6 @@
 - Fix to final gear 2 logic
 - Implemented UI changes to add trip summary info (fuel related) and more obd data
 - Removed scanning for bt devices, unnecessary if OBD needs to be paired to the phone.(Needs to be tested)
+
+## 24/2/25
+- Started implementing fuel logic
