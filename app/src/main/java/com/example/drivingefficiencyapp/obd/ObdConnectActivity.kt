@@ -253,6 +253,7 @@ class ObdConnectActivity : AppCompatActivity() {
                 binding.rpmText.text = data.rpm
                 binding.speedText.text = data.speed
                 binding.tempText.text = data.temperature
+                binding.gearText.text = data.gear
                 binding.fuelRateText.text = data.instantFuelRate // Correct ID
                 binding.avgFuelConsText.text = data.averageFuelConsumption // Correct ID
                 binding.avgSpeedText.text = data.averageSpeed // Correct ID
@@ -296,6 +297,7 @@ class ObdConnectActivity : AppCompatActivity() {
                     binding.rpmText.text = "- RPM"
                     binding.speedText.text = "- km/h"
                     binding.tempText.text = "- °C"
+                    binding.gearText.text = "- Gear"
                     binding.fuelRateText.text = "- L/h"          // Correct ID
                     binding.avgFuelConsText.text = "- L/100km"  // Correct ID
                     binding.avgSpeedText.text = "- km/h"        // Correct ID

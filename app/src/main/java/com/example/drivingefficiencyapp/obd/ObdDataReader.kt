@@ -22,11 +22,10 @@ class ObdDataReader(
     private var currentGear: Int = 0 // Store gear as Int
 
     // --- Dynamic AFR Estimation ---
-    // Adjusted values for better idle accuracy.  TUNING REQUIRED.
-    private val minNormalizedMaf: Double = 0.05  // Lowered: Expect lower MAF/RPM at high load
-    private val maxNormalizedMaf: Double = 0.80 // Lowered:  Match observed idle MAF/RPM
-    private val minAfr: Double = 50.0        // Slightly lowered:  Rich limit.
-    private val maxAfr: Double = 90.0       // Significantly increased: Lean limit for idle.
+    private val minNormalizedMaf: Double = 0.05
+    private val maxNormalizedMaf: Double = 0.80
+    private val minAfr: Double = 50.0
+    private val maxAfr: Double = 90.0
     private val fuelDensity: Double = 832.0
 
     // --- Data Storage and Initialization ---
@@ -59,7 +58,6 @@ class ObdDataReader(
             tripStartTime = System.currentTimeMillis()
             lastTimestamp = tripStartTime
 
-            val commands = listOf("010C", "010D", "0105", "0110")
 
             while (isActive) {
                 try {
@@ -75,7 +73,6 @@ class ObdDataReader(
 
                     currentRpm = rpmValue          // Update currentRpm
                     currentSpeed = speedValue      // Update currentSpeed
-                    // currentGear is updated in parseObdResponse
 
                     if (firstIteration) {
                         firstIteration = false
@@ -134,7 +131,7 @@ class ObdDataReader(
                         ObdData(
                             rpm = "$currentRpm RPM",
                             speed = String.format("%.1f km/h", currentSpeed),
-                            gear = "Gear: $currentGear",  // Format gear here
+                            gear = "Gear: $currentGear",
                             temperature = tempStr,
                             instantFuelRate = String.format("%.2f L/h", instantFuelRate),
                             instantFuelConsumption = if (instantFuelConsumption.isInfinite()) "∞ L/100km" else String.format("%.2f L/100km", instantFuelConsumption),
@@ -157,7 +154,7 @@ class ObdDataReader(
                         ObdData( //Consistent error handling
                             rpm = "- RPM (Error)",
                             speed = "- km/h (Error)",
-                            gear = "- Gear (Error)",
+                            gear = "Gear: (Error)",
                             temperature = "- °C (Error)",
                             instantFuelRate = "- L/h (Error)",
                             instantFuelConsumption = "- L/100km (Error)",
@@ -249,14 +246,15 @@ class ObdDataReader(
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
                         val rpm = ((256 * a) + b) / 4
-                        "$rpm"  // Return ONLY the RPM value as a string
+                        "$rpm"
                     } else { "- (Invalid Data - Short)" }
                 }
                 "010D" -> { // Speed
                     if (dataBytes.length >= 2) {
                         val speed = Integer.parseInt(dataBytes.substring(0, 2), 16).toDouble()
-                        val currentGear = gearCalculator.calculateGear(currentRpm, speed) // Update currentGear!
-                        "$currentSpeed km/h (Gear: $currentGear)"
+                        // Calculate gear here
+                        currentGear = gearCalculator.calculateGear(currentRpm, speed).toIntOrNull() ?: 0
+                        return "$speed"
                     } else {
                         "- (Invalid Data - Short)"
                     }

@@ -57,4 +57,5 @@
     <string name="default_rpm">- RPM</string>
     <string name="default_speed">- km/h</string>
     <string name="default_temp">- °C</string>
+    <string name="default_gear">Gear: -</string>
 </resources>
