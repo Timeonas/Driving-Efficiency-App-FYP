@@ -12,130 +12,219 @@ class ObdDataReader(
     private val scope: CoroutineScope,
     private val outputStream: OutputStream,
     private val inputStream: InputStream,
-    private val gearCalculator: GearCalculator // Inject GearCalculator
+    private val gearCalculator: GearCalculator
 ) {
-    private var readingJob: Job? = null
-    private var currentRpm = 0
-    private var currentSpeed: Double = 0.0
-    private var currentFuelRate: Double = 0.0 // Store current fuel rate
 
-    // --- Data Storage for Calculations ---
+    private var readingJob: Job? = null
+    private var currentRpm: Int = 0
+    private var currentSpeed: Double = 0.0
+    private var currentFuelRate: Double = 0.0
+    private var currentGear: Int = 0 // Store gear as Int
+
+    // --- Dynamic AFR Estimation ---
+    // Adjusted values for better idle accuracy.  TUNING REQUIRED.
+    private val minNormalizedMaf: Double = 0.05  // Lowered: Expect lower MAF/RPM at high load
+    private val maxNormalizedMaf: Double = 0.80 // Lowered:  Match observed idle MAF/RPM
+    private val minAfr: Double = 50.0        // Slightly lowered:  Rich limit.
+    private val maxAfr: Double = 90.0       // Significantly increased: Lean limit for idle.
+    private val fuelDensity: Double = 832.0
+
+    // --- Data Storage and Initialization ---
     private var totalDistance: Double = 0.0
     private var totalFuelUsed: Double = 0.0
     private var lastTimestamp: Long = 0
-    private var lastInstantFuelRate: Double = 0.0 // in L/h
-    private var tripStartTime: Long = 0 // Timestamp for calculating trip duration
+    private var tripStartTime: Long = 0
+    private var firstIteration = true
 
     data class ObdData(
         val rpm: String = "- RPM",
         val speed: String = "- km/h",
+        val gear: String = "- Gear", // Gear as String for display
         val temperature: String = "- °C",
-        val instantFuelRate: String = "- L/h", // Liters per hour
+        val instantFuelRate: String = "- L/h",
+        val instantFuelConsumption: String = "- L/100km",
         val averageFuelConsumption: String = "- L/100km",
-        val instantFuelConsumption: String = "- L/100km", // Added instant consumption
         val averageSpeed: String = "- km/h",
         val distanceTraveled: String = "- km",
-        val fuelUsed: String = "- L"
+        val fuelUsed: String = "- L",
+        val maf: String = "- g/s",
+        val afr: String = "- AFR"
     )
 
     private val _obdData = MutableStateFlow(ObdData())
     val obdData: StateFlow<ObdData> = _obdData
 
     suspend fun startContinuousReading() {
-        Log.d("ObdDataReader", "startContinuousReading called")
         readingJob = scope.launch(Dispatchers.IO) {
-            // Initialize trip start time.
             tripStartTime = System.currentTimeMillis()
             lastTimestamp = tripStartTime
 
-            val commands = listOf("010C", "010D", "0105", "015E")  // Keep only necessary PIDs
+            val commands = listOf("010C", "010D", "0105", "0110")
 
             while (isActive) {
                 try {
-                    val instantFuelRateStr = sendAndParseCommand("015E")
-                    //Calculate instant fuel consumption
-                    val instantFuelConsumption = if (currentSpeed > 0.0) {
-                        // Instant Consumption = (Instant Fuel Rate / Speed) * 100
-                        val fuelRate = instantFuelRateStr.split(" ")[0].toDoubleOrNull() ?: 0.0
-                        String.format("%.2f L/100km", (fuelRate / currentSpeed) * 100)
-                    } else {
-                        "∞ L/100km" // Handle zero speed
+                    val rpmStr = sendAndParseCommand("010C")
+                    val speedStr = sendAndParseCommand("010D")
+                    val tempStr = sendAndParseCommand("0105")
+                    val mafStr = sendAndParseCommand("0110")
+
+                    // --- Parse and Update Current Values ---
+                    val rpmValue = parseNumericValue(rpmStr).toInt()
+                    val speedValue = parseNumericValue(speedStr)
+                    val mafValue = parseNumericValue(mafStr)
+
+                    currentRpm = rpmValue          // Update currentRpm
+                    currentSpeed = speedValue      // Update currentSpeed
+                    // currentGear is updated in parseObdResponse
+
+                    if (firstIteration) {
+                        firstIteration = false
+                        delay(200)
+                        lastTimestamp = System.currentTimeMillis()
+                        continue
+                    }
+                    val currentTime = System.currentTimeMillis()
+                    val deltaTimeSeconds = (currentTime - lastTimestamp) / 1000.0
+
+                    if (deltaTimeSeconds <= 0.001) {
+                        Log.w("ObdDataReader", "Skipping: small/negative deltaTime: $deltaTimeSeconds")
+                        continue
                     }
 
+                    // --- Calculations ---
+                    val instantDistance = currentSpeed * deltaTimeSeconds / 3600.0
+                    val instantFuelLiters = calculateInstantFuel(mafValue, deltaTimeSeconds)
+                    val instantFuelRate = calculateInstantFuelRate(mafValue)
+                    currentFuelRate = instantFuelRate
 
-                    val newData = ObdData(
-                        rpm = sendAndParseCommand("010C"),
-                        speed = sendAndParseCommand("010D"),
-                        temperature = sendAndParseCommand("0105"),
-                        instantFuelRate = instantFuelRateStr,
-                        averageFuelConsumption = if (totalDistance > 0) String.format("%.2f L/100km", (totalFuelUsed / totalDistance) * 100) else "- L/100km",
-                        instantFuelConsumption = instantFuelConsumption, // Use calculated value
-                        averageSpeed = if (System.currentTimeMillis() - tripStartTime > 0) String.format("%.2f km/h", totalDistance / ((System.currentTimeMillis() - tripStartTime).toDouble() / 3600000.0)) else "- km/h",
-                        distanceTraveled = String.format("%.2f km", totalDistance),
-                        fuelUsed = String.format("%.2f L", totalFuelUsed)
+                    totalDistance += instantDistance
+                    totalFuelUsed += instantFuelLiters
+
+                    val instantFuelConsumption = if (currentSpeed > 0) {
+                        (instantFuelLiters / instantDistance) * 100.0
+                    } else {
+                        Double.POSITIVE_INFINITY
+                    }
+
+                    val averageFuelConsumption = if (totalDistance > 0) {
+                        (totalFuelUsed / totalDistance) * 100.0
+                    } else {
+                        0.0
+                    }
+
+                    val tripDurationSeconds = (currentTime - tripStartTime) / 1000.0
+                    val averageSpeed = if (tripDurationSeconds > 0) {
+                        totalDistance / (tripDurationSeconds / 3600.0)
+                    } else {
+                        0.0
+                    }
+                    val estimatedAfr = if (currentRpm > 0) {
+                        linearInterpolate(mafValue / currentRpm, minNormalizedMaf, maxNormalizedMaf, minAfr, maxAfr)
+                    } else {
+                        0.0
+                    }
+
+                    Log.d("AFR_Tuning", "RPM: $currentRpm, MAF: $mafValue, NormalizedMAF: ${mafValue / currentRpm}, EstimatedAFR: $estimatedAfr, InstantFuelRate: $instantFuelRate")
+
+
+                    lastTimestamp = currentTime  // Update lastTimestamp
+
+                    // --- Emit Data ---
+                    _obdData.emit(
+                        ObdData(
+                            rpm = "$currentRpm RPM",
+                            speed = String.format("%.1f km/h", currentSpeed),
+                            gear = "Gear: $currentGear",  // Format gear here
+                            temperature = tempStr,
+                            instantFuelRate = String.format("%.2f L/h", instantFuelRate),
+                            instantFuelConsumption = if (instantFuelConsumption.isInfinite()) "∞ L/100km" else String.format("%.2f L/100km", instantFuelConsumption),
+                            averageFuelConsumption = String.format("%.2f L/100km", averageFuelConsumption),
+                            averageSpeed = String.format("%.2f km/h", averageSpeed),
+                            distanceTraveled = String.format("%.3f km", totalDistance),
+                            fuelUsed = String.format("%.4f L", totalFuelUsed),
+                            maf = String.format("%.2f g/s", mafValue),
+                            afr = String.format("%.2f", estimatedAfr)
+                        )
                     )
-
-                    _obdData.emit(newData)
-                    delay(100) // Adjust delay as needed
+                    delay(100)
 
                 } catch (e: CancellationException) {
                     Log.d("ObdDataReader", "Reading loop cancelled")
                     break
                 } catch (e: Exception) {
-                    Log.e("ObdDataReader", "Error in reading loop: ${e.message}", e)
-                    _obdData.emit(ObdData( //Emit error data.
-                        rpm = "- RPM (Error)",
-                        speed = "- km/h (Error)",
-                        temperature = "- °C (Error)",
-                        instantFuelRate = "- L/h (Error)",
-                        averageFuelConsumption = "- L/100km (Error)",
-                        instantFuelConsumption = "- L/100km (Error)",
-                        averageSpeed = "- km/h (Error)",
-                        distanceTraveled = "- km (Error)",
-                        fuelUsed = "- L (Error)"
-                    ))
+                    Log.e("ObdDataReader", "Error: ${e.message}", e)
+                    _obdData.emit(
+                        ObdData( //Consistent error handling
+                            rpm = "- RPM (Error)",
+                            speed = "- km/h (Error)",
+                            gear = "- Gear (Error)",
+                            temperature = "- °C (Error)",
+                            instantFuelRate = "- L/h (Error)",
+                            instantFuelConsumption = "- L/100km (Error)",
+                            averageFuelConsumption = "- L/100km (Error)",
+                            averageSpeed = "- km/h (Error)",
+                            distanceTraveled = "- km (Error)",
+                            fuelUsed = "- L (Error)",
+                            maf = "- g/s (Error)",
+                            afr = "- (Error)"
+                        )
+                    )
                     delay(500)
                 }
             }
         }
     }
 
-    private suspend fun sendAndParseCommand(command: String): String {
-        val response = sendCommandAndReadResponse(command)
-        return parseObdResponse(command, response)
+    private fun linearInterpolate(x: Double, x0: Double, x1: Double, y0: Double, y1: Double): Double {
+        val boundedX = x.coerceIn(x0, x1)
+        return y0 + (boundedX - x0) * (y1 - y0) / (x1 - x0)
     }
 
-    private suspend fun sendCommandAndReadResponse(command: String): String {
+    private fun calculateInstantFuel(mafGramsPerSecond: Double, deltaTimeSeconds: Double): Double {
+        if (currentRpm <= 0 || mafGramsPerSecond <= 0) { return 0.0 }
+        val normalizedMaf = mafGramsPerSecond / currentRpm
+        val estimatedAfr = linearInterpolate(normalizedMaf, minNormalizedMaf, maxNormalizedMaf, minAfr, maxAfr)
+        val fuelMassFlowRate = mafGramsPerSecond / estimatedAfr
+        val fuelVolumeFlowRate = fuelMassFlowRate / fuelDensity
+        return fuelVolumeFlowRate * deltaTimeSeconds
+    }
+
+    private fun calculateInstantFuelRate(mafGramsPerSecond: Double): Double {
+        if (currentRpm <= 0 || mafGramsPerSecond <= 0) { return 0.0 }
+        val normalizedMaf = mafGramsPerSecond / currentRpm
+        val estimatedAfr = linearInterpolate(normalizedMaf, minNormalizedMaf, maxNormalizedMaf, minAfr, maxAfr)
+        val fuelMassFlowRate = mafGramsPerSecond / estimatedAfr
+        val fuelVolumeFlowRate = fuelMassFlowRate / fuelDensity
+        return fuelVolumeFlowRate * 3600.0
+    }
+
+    private fun parseNumericValue(valueStr: String): Double {
+        val parts = valueStr.split(" ")
+        return parts[0].toDoubleOrNull() ?: 0.0
+    }
+
+    private suspend fun sendAndParseCommand(command: String): String {
         return withContext(Dispatchers.IO) {
             val buffer = ByteArray(1024)
             try {
-                Log.d("SendCommand", "Sending command: $command")
-                val startTime = System.currentTimeMillis()
+                Log.d("SendCommand", "Sending: $command")
                 val response = withTimeoutOrNull(2000) {
                     outputStream.write((command + "\r").toByteArray())
                     delay(50)
                     val bytesRead = withTimeoutOrNull(1000) { inputStream.read(buffer) } ?: 0
-                    if (bytesRead > 0) {
-                        String(buffer, 0, bytesRead)
-                    } else {
-                        ""
-                    }
+                    if (bytesRead > 0) String(buffer, 0, bytesRead) else ""
                 } ?: ""
-
-                val endTime = System.currentTimeMillis()
-                Log.d("SendCommand", "Command $command took ${endTime - startTime} ms")
-                response
+                parseObdResponse(command, response)
             } catch (e: IOException) {
-                Log.e("ObdDataReader", "Error sending/reading command $command: ${e.message}")
+                Log.e("ObdDataReader", "IO Error: ${e.message}")
                 ""
             }
         }
     }
-
     private fun parseObdResponse(command: String, response: String): String {
         try {
             val cleanResponse = response.replace(">", "").trim()
-            Log.d("OBD_PARSER", "Raw response for $command: $cleanResponse")
+            Log.d("OBD_PARSER", "Raw: $command: $cleanResponse")
 
             if (cleanResponse.isEmpty() || cleanResponse.uppercase() == "NO DATA") {
                 return "- (No Data)"
@@ -143,51 +232,30 @@ class ObdDataReader(
             if (cleanResponse.contains("ERROR") || cleanResponse.contains("CAN ERROR") || cleanResponse.startsWith("?")) {
                 return "- (Error)"
             }
-            if (cleanResponse.contains("SEARCHING")) {
-                return "- (Searching...)"
-            }
-            if(cleanResponse.contains("BUS INIT")){
-                return "- (BUS INIT Error)"
-            }
+            if (cleanResponse.contains("SEARCHING")) { return "- (Searching...)" }
+            if (cleanResponse.contains("BUS INIT")) { return "- (BUS INIT Error)" }
 
             val pid = command.substring(2)
             val pidIndex = cleanResponse.indexOf(pid, ignoreCase = true)
-
-            if (pidIndex == -1) {
-                return "- (Unexpected Response)"
-            }
+            if (pidIndex == -1) { return "- (Unexpected Response)" }
 
             var dataBytes = cleanResponse.substring(pidIndex + pid.length).trim()
-            dataBytes = dataBytes.filter { it.isDigit() || (it in 'A'..'F') || (it in 'a'..'f') }
-
-            Log.d("OBD_PARSER", "Cleaned data bytes for $command: $dataBytes")
+            dataBytes = dataBytes.filter { it.isDigit() || it in 'A'..'F' || it in 'a'..'f' }
+            Log.d("OBD_PARSER", "Cleaned: $command: $dataBytes")
 
             return when (command) {
                 "010C" -> { // RPM
-                    if (dataBytes.isNotEmpty() && dataBytes.length >= 4) {
-                        Log.d("OBD_PARSER", "Parsing RPM. dataBytes: $dataBytes")
+                    if (dataBytes.length >= 4) {
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
-                        currentRpm = ((256 * a) + b) / 4
-                        "$currentRpm RPM"
-                    } else {
-                        "- (Invalid Data - Short)"
-                    }
+                        val rpm = ((256 * a) + b) / 4
+                        "$rpm"  // Return ONLY the RPM value as a string
+                    } else { "- (Invalid Data - Short)" }
                 }
                 "010D" -> { // Speed
                     if (dataBytes.length >= 2) {
-                        val newSpeed = Integer.parseInt(dataBytes.substring(0, 2), 16).toDouble()
-                        val currentGear = gearCalculator.calculateGear(currentRpm, newSpeed)
-
-                        // Calculate distance (trapezoidal integration)
-                        val currentTime = System.currentTimeMillis()
-                        val deltaTimeSeconds = (currentTime - lastTimestamp) / 1000.0
-                        val distanceDelta = (currentSpeed + newSpeed) / 2 * deltaTimeSeconds / 3600 // km
-                        totalDistance += distanceDelta
-                        lastTimestamp = currentTime
-                        currentSpeed = newSpeed
-
-
+                        val speed = Integer.parseInt(dataBytes.substring(0, 2), 16).toDouble()
+                        val currentGear = gearCalculator.calculateGear(currentRpm, speed) // Update currentGear!
                         "$currentSpeed km/h (Gear: $currentGear)"
                     } else {
                         "- (Invalid Data - Short)"
@@ -196,39 +264,21 @@ class ObdDataReader(
                 "0105" -> { // Coolant Temp
                     if (dataBytes.length >= 2) {
                         val temp = Integer.parseInt(dataBytes.substring(0, 2), 16) - 40
-                        "$temp°C"
-                    } else {
-                        "- (Invalid Data - Short)"
-                    }
+                        "$temp°C"  // Return only the numeric temperature
+                    } else { "- (Invalid Data - Short)" }
                 }
-                "015E" -> {  // Engine fuel rate
+                "0110" -> { // MAF
                     if (dataBytes.length >= 4) {
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
-                        val fuelRate = ((256 * a) + b) * 0.05 // L/h
-
-                        //Calculate fuel used since last
-                        val currentTime = System.currentTimeMillis()
-                        val deltaTimeSeconds = (currentTime - lastTimestamp) / 1000.0
-                        val fuelUsedDelta = (lastInstantFuelRate + fuelRate) / 2 * deltaTimeSeconds / 3600 // in Liters
-
-                        totalFuelUsed += fuelUsedDelta // Accumulate
-                        lastInstantFuelRate = fuelRate
-                        currentFuelRate = fuelRate // Store for instant consumption calculation
-
-                        String.format("%.2f L/h", fuelRate)
-                    } else {
-                        "- (Invalid Data - Short)"
-                    }
+                        val maf = ((256 * a) + b) / 100.0
+                        "$maf"  // Return only the numeric MAF value
+                    } else { "- (Invalid Data - Short)" }
                 }
-
                 else -> "Unknown command: $command"
             }
-        } catch (e: NumberFormatException) {
-            Log.e("OBD_PARSER", "Number format error: ${e.message} for response: $response")
-            return "- (Parse Error: Invalid Number)"
         } catch (e: Exception) {
-            Log.e("OBD_PARSER", "Parse error: ${e.message} for response: $response")
+            Log.e("OBD_PARSER", "Parse error: ${e.message}, response: $response")
             return "- (Parse Error)"
         }
     }
@@ -236,8 +286,8 @@ class ObdDataReader(
     fun resetTripData() {
         totalDistance = 0.0
         totalFuelUsed = 0.0
+        lastTimestamp = System.currentTimeMillis()
         tripStartTime = System.currentTimeMillis()
-        lastTimestamp = tripStartTime
     }
 
     fun stopReading() {
