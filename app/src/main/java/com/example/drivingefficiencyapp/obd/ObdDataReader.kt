@@ -24,8 +24,8 @@ class ObdDataReader(
     // --- Dynamic AFR Estimation ---
     private val minNormalizedMaf: Double = 0.05
     private val maxNormalizedMaf: Double = 0.80
-    private val minAfr: Double = 50.0
-    private val maxAfr: Double = 90.0
+    private val minAfr: Double = 15.0
+    private val maxAfr: Double = 40.0
     private val fuelDensity: Double = 832.0
 
     // --- Data Storage and Initialization ---
@@ -34,6 +34,9 @@ class ObdDataReader(
     private var lastTimestamp: Long = 0
     private var tripStartTime: Long = 0
     private var firstIteration = true
+
+    private val smoothingFactor = 0.1
+    private var smoothedFuelConsumption = 0.0
 
     data class ObdData(
         val rpm: String = "- RPM",
@@ -86,8 +89,10 @@ class ObdDataReader(
                         continue
                     }
 
-                    // --- Calculations ---
-                    val instantDistance = currentSpeed * deltaTimeSeconds / 3600.0
+                    val instantDistance = if (currentSpeed > 2.0) {
+                        currentSpeed * deltaTimeSeconds / 3600.0
+                    } else 0.0
+
                     val instantFuelLiters = calculateInstantFuel(mafValue, deltaTimeSeconds)
                     val instantFuelRate = calculateInstantFuelRate(mafValue)
                     currentFuelRate = instantFuelRate
@@ -95,11 +100,15 @@ class ObdDataReader(
                     totalDistance += instantDistance
                     totalFuelUsed += instantFuelLiters
 
-                    val averageFuelConsumption = if (totalDistance > 0) {
+                    // Calculate raw average fuel consumption
+                    val rawAverageFuelConsumption = if (totalDistance > 0) {
                         (totalFuelUsed / totalDistance) * 100.0
                     } else {
                         0.0
                     }
+
+                    smoothedFuelConsumption = smoothingFactor * rawAverageFuelConsumption +
+                            (1 - smoothingFactor) * smoothedFuelConsumption
 
                     val tripDurationSeconds = (currentTime - tripStartTime) / 1000.0
                     val averageSpeed = if (tripDurationSeconds > 0) {
@@ -118,7 +127,6 @@ class ObdDataReader(
 
                     lastTimestamp = currentTime  // Update lastTimestamp
 
-                    // --- Emit Data ---
                     _obdData.emit(
                         ObdData(
                             rpm = "$currentRpm RPM",
@@ -126,7 +134,7 @@ class ObdDataReader(
                             gear = "Gear: $currentGear",
                             temperature = tempStr,
                             instantFuelRate = String.format("%.2f L/h", instantFuelRate),
-                            averageFuelConsumption = String.format("%.2f L/100km", averageFuelConsumption),
+                            averageFuelConsumption = String.format("%.2f L/100km", smoothedFuelConsumption),
                             averageSpeed = String.format("%.2f km/h", averageSpeed),
                             distanceTraveled = String.format("%.3f km", totalDistance),
                             fuelUsed = String.format("%.4f L", totalFuelUsed),
