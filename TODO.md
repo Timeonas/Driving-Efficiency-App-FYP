@@ -11,9 +11,9 @@ OBD2 Functionality:
 - ~~Using rpm, gear ratios and speed, estimate gear~~
 - ~~Implement fuel related parameters~~
 - **Implement into the main project**
-    - Move the OBD2 connect functionality into the main menu.
-    - Once connected, allow the user to enter the drive screen.
-    - Display the instant OBD2 data (speed, rpm) on the drive screen.
+    - ~~Move the OBD2 connect functionality into the main menu.~~
+    - ~~Once connected, allow the user to enter the drive screen~~.
+    - ~~Display the instant OBD2 data (speed, rpm) on the drive screen~~.
     - Once a user finishes a drive, display the trip summary screen with the OBD2 trip summary data.
     - Keep OBD activity for test purposes for now, move the connection logic to the main menu.
 

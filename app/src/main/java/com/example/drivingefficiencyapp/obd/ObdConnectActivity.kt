@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import com.example.drivingefficiencyapp.databinding.ObdConnectActivityBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -220,6 +218,6 @@ class ObdConnectActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         dataCollectionJob?.cancel()
-        // We don't disconnect when the activity is destroyed to maintain connection
+        //don't disconnect when the activity is destroyed to maintain connection
     }
 }

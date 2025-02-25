@@ -11,7 +11,6 @@ import com.example.drivingefficiencyapp.obd.ObdConnectionManager
 import com.example.drivingefficiencyapp.profile.ProfileActivity
 import com.example.drivingefficiencyapp.trip.TripsActivity
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class MainMenuActivity : AppCompatActivity() {

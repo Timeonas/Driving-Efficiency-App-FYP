@@ -18,6 +18,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.drivingefficiencyapp.LocationService
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
+import com.example.drivingefficiencyapp.obd.ObdConnectionManager
+import com.example.drivingefficiencyapp.obd.ObdDataReader
 import com.example.drivingefficiencyapp.trip.TripRepository
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -29,6 +31,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -51,6 +54,10 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
     private var hasAccelerometerData = false
     private var hasMagnetometerData = false
 
+    // OBD data collection
+    private var obdDataCollectionJob: Job? = null
+    private var obdDataReader: ObdDataReader? = null
+
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1002
@@ -68,6 +75,9 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
         initializeComponents()
         checkAndRequestPermissions()
+
+        // Initialize OBD connection
+        initializeObdConnection()
     }
 
     private fun setupBasicUI() {
@@ -153,6 +163,48 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
             saveTrip()
             cleanup()
             finish()
+        }
+    }
+
+    // OBD Connection Methods
+    private fun initializeObdConnection() {
+        if (!ObdConnectionManager.connectionState.value) {
+            showToast("OBD not connected. Data display limited.")
+            return
+        }
+
+        lifecycleScope.launch {
+            binding.liveSpeedText.text = "Initializing..."
+            ObdConnectionManager.initializeObd { success ->
+                if (success) {
+                    startObdDataCollection()
+                } else {
+                    showToast("OBD initialization failed")
+                    binding.liveSpeedText.text = "- km/h"
+                    binding.liveRpmText.text = "- RPM"
+                    binding.liveGearText.text = "- Gear"
+                    binding.liveTempText.text = "- °C"
+                    binding.liveFuelRateText.text = "- L/h"
+                }
+            }
+        }
+    }
+
+    private fun startObdDataCollection() {
+        // Reset any existing trip data in OBD reader
+        ObdConnectionManager.resetTripData()
+
+        // Get data reader and start collecting data
+        obdDataReader = ObdConnectionManager.startContinuousReading(lifecycleScope)
+
+        obdDataCollectionJob = lifecycleScope.launch {
+            obdDataReader?.obdData?.collect { data ->
+                binding.liveSpeedText.text = data.speed
+                binding.liveRpmText.text = data.rpm
+                binding.liveGearText.text = data.gear
+                binding.liveTempText.text = data.temperature
+                binding.liveFuelRateText.text = data.instantFuelRate
+            }
         }
     }
 
@@ -342,6 +394,10 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         stopLocationUpdates()
         stopLocationService()
         sensorManager.unregisterListener(this)
+
+        // Cancel OBD data collection
+        obdDataCollectionJob?.cancel()
+        obdDataCollectionJob = null
     }
 
     override fun onDestroy() {
