@@ -69,4 +69,5 @@
     <string name="driving_feedback">Driving Feedback</string>
     <string name="save_trip">Save Trip</string>
     <string name="close">Close</string>
+    <string name="estimated_cost_format">€%.2f</string>
 </resources>

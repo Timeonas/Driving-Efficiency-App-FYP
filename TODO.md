@@ -10,25 +10,30 @@ OBD2 Functionality:
 - ~~Try to parse good data relevant to the project, such as fuel consumption, speed, gear, etc.~~
 - ~~Using rpm, gear ratios and speed, estimate gear~~
 - ~~Implement fuel related parameters~~
-- **Implement into the main project**
+~~- **Implement into the main project**~~
     - ~~Move the OBD2 connect functionality into the main menu.~~
     - ~~Once connected, allow the user to enter the drive screen~~.
     - ~~Display the instant OBD2 data (speed, rpm) on the drive screen~~.
-    - Once a user finishes a drive, display the trip summary screen with the OBD2 trip summary data.
-    - Keep OBD activity for test purposes for now, move the connection logic to the main menu.
+    - ~~Once a user finishes a drive, display the trip summary screen with the OBD2 trip summary data.~~
+    - ~~Keep OBD activity for test purposes for now, move the connection logic to the main menu.~~
 
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~
 - ~~Parse basic information from the user's phone, such as the current speed, and display it on the screen~~
 - ~~Tilt the map view so its in 3d mode~~
 - ~~Orient the map view so that it is always facing the direction the user is driving~~
-- Implement a trip summary screen that shows the user's trip information, such as the distance traveled, 
-the time taken, and the average speed
+- ~~Implement a trip summary screen that shows the user's trip information, such as the distance traveled, 
+the time taken, and the average speed~~
 - ~~Add icon on map to show the user's current location~~
-- Fix the orientation, right now while driving the map is not oriented correctly for some reason
 - ~~Add ability to delete trips~~
 - ~~Add offline functionality, so that trips are cached locally if the user is offline~~
 - ~~Make the tracking trip notification not cancelable~~
+- Replace trip basic data in the db with the OBD2 trip
+
+Improvements:
+- Fix the orientation, right now while driving the map is not oriented correctly for some reason
+- Fix Bluetooth functionality, sometimes it does not connect to the OBD2 device
+- Fix instant fuel rate, not accurate as of right now
 
 Appearance (To be done after core app is done):
 - Better App Logo

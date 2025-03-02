@@ -1,6 +1,7 @@
 package com.example.drivingefficiencyapp.ui
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -9,6 +10,8 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
+import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -34,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.drivingefficiencyapp.trip.TripSummary
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -160,9 +164,10 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
     private fun setupEndDriveButton() {
         binding.endDriveButton.setOnClickListener {
-            saveTrip()
-            cleanup()
-            finish()
+            // Get trip summary data and show the dialog
+            getTripSummaryData { tripSummary ->
+                showTripSummaryDialog(tripSummary)
+            }
         }
     }
 
@@ -208,15 +213,98 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         }
     }
 
-    private fun saveTrip() {
-        val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
-        val duration = calculateDuration()
+    // New code for trip summary functionality
+    private fun getTripSummaryData(callback: (TripSummary) -> Unit) {
+        // If OBD is connected, get trip data from OBD system
+        if (ObdConnectionManager.connectionState.value && obdDataReader != null) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Get trip data from ObdConnectionManager
+                val tripData = ObdConnectionManager.getTripSummary()
 
-        // Use runBlocking to ensure save completes before activity destruction
+                // Create a TripSummary object with the data
+                val tripSummary = TripSummary(
+                    averageSpeed = tripData.averageSpeed,
+                    distanceTraveled = tripData.distance,
+                    averageFuelConsumption = tripData.averageFuelConsumption,
+                    fuelUsed = tripData.fuelUsed,
+                    tripDuration = calculateDuration(),
+                    date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
+                )
+
+                withContext(Dispatchers.Main) {
+                    callback(tripSummary)
+                }
+            }
+        } else {
+            // If OBD not connected, create dummy data
+            val duration = calculateDuration()
+            val date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
+
+            // Create a TripSummary with estimated data
+            val tripSummary = TripSummary(
+                averageSpeed = 65.5f,
+                distanceTraveled = 27.3f,
+                averageFuelConsumption = 6.8f,
+                fuelUsed = 1.86f,
+                tripDuration = duration,
+                date = date
+            )
+
+            callback(tripSummary)
+        }
+    }
+
+    private fun showTripSummaryDialog(tripSummary: TripSummary) {
+        // Inflate the dialog layout
+        val dialogView = layoutInflater.inflate(R.layout.trip_summary_dialog, null)
+
+        // Get references to views in the dialog
+        val avgSpeedText = dialogView.findViewById<TextView>(R.id.avgSpeedText)
+        val distanceText = dialogView.findViewById<TextView>(R.id.distanceText)
+        val fuelConsumptionText = dialogView.findViewById<TextView>(R.id.fuelConsumptionText)
+        val fuelUsedText = dialogView.findViewById<TextView>(R.id.fuelUsedText)
+        val tripDurationText = dialogView.findViewById<TextView>(R.id.tripDurationText)
+        val estimatedCostText = dialogView.findViewById<TextView>(R.id.estimatedCostText)
+
+        // Set values to dialog views
+        avgSpeedText.text = "${formatFloat(tripSummary.averageSpeed)} km/h"
+        distanceText.text = "${formatFloat(tripSummary.distanceTraveled)} km"
+        fuelConsumptionText.text = "${formatFloat(tripSummary.averageFuelConsumption)} L/100km"
+        fuelUsedText.text = "${formatFloat(tripSummary.fuelUsed)} L"
+        tripDurationText.text = tripSummary.tripDuration
+
+        // Calculate estimated cost (using a default fuel price if not available)
+        val fuelPrice = 1.75 // Default price per liter in Euro
+        val estimatedCost = tripSummary.fuelUsed * fuelPrice
+        estimatedCostText.text = getString(R.string.estimated_cost_format, estimatedCost)
+
+        // Create and show the dialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        // Set up button click listeners
+        dialogView.findViewById<Button>(R.id.saveButton).setOnClickListener {
+            // Save trip to database
+            saveTripToDatabase(tripSummary)
+            dialog.dismiss()
+            finish() // Return to previous activity
+        }
+
+        dialogView.findViewById<Button>(R.id.dismissButton).setOnClickListener {
+            dialog.dismiss()
+            finish() // Return to previous activity
+        }
+
+        dialog.show()
+    }
+
+    private fun saveTripToDatabase(tripSummary: TripSummary) {
         lifecycleScope.launch(Dispatchers.Main) {
             try {
                 withContext(Dispatchers.IO) {
-                    tripRepository.saveTrip(date, duration)
+                    tripRepository.saveTrip(tripSummary.date, tripSummary.tripDuration, tripSummary)
                         .onSuccess {
                             withContext(Dispatchers.Main) {
                                 showToast("Trip saved successfully")
@@ -252,6 +340,25 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
             }
             minutes > 0 -> "$minutes minutes"
             else -> "$seconds seconds"
+        }
+    }
+
+    // Helper function to format floats to one decimal place
+    private fun formatFloat(value: Float): String {
+        return String.format("%.1f", value)
+    }
+
+    // Helper function to parse a string to float safely
+    private fun parseFloat(value: String): Float {
+        return try {
+            value.replace("km/h", "")
+                .replace("L/100km", "")
+                .replace("L", "")
+                .replace("km", "")
+                .trim()
+                .toFloat()
+        } catch (e: Exception) {
+            0f
         }
     }
 

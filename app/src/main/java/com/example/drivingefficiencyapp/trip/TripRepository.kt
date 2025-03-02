@@ -18,7 +18,7 @@ class TripRepository {
         firestore.collection("users").document(userId).collection("trips")
     }
 
-    suspend fun saveTrip(date: String, duration: String): Result<Trip> = withContext(Dispatchers.IO) {
+    suspend fun saveTrip(date: String, duration: String, tripSummary: TripSummary): Result<Trip> = withContext(Dispatchers.IO) {
         try {
             val tripsCollection = getUserTripsCollection()
                 ?: throw IllegalStateException("User not logged in")

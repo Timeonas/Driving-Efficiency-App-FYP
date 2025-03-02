@@ -90,3 +90,5 @@
 
 ## 2/3/25
 - Create the trip summary screen for the drive activity
+- Implemented overview trip data
+- Foundation set for driving efficiency score

@@ -196,6 +196,10 @@ object ObdConnectionManager {
         obdDataReader?.resetTripData()
     }
 
+    fun getTripSummary(): TripData {
+        return obdDataReader?.getTripSummary() ?: TripData()
+    }
+
     /**
      * Check if the required permissions are granted
      */

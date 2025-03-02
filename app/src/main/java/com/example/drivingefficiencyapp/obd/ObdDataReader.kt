@@ -279,6 +279,29 @@ class ObdDataReader(
         }
     }
 
+    fun getTripSummary(): TripData {
+        val currentData = obdData.value
+
+        return TripData(
+            averageSpeed = parseFloat(currentData.averageSpeed),
+            distance = parseFloat(currentData.distanceTraveled),
+            duration = System.currentTimeMillis() - tripStartTime,
+            fuelUsed = parseFloat(currentData.fuelUsed),
+            averageFuelConsumption = parseFloat(currentData.averageFuelConsumption),
+        )
+    }
+
+    private fun parseFloat(value: String): Float {
+        return value.replace("km/h", "")
+            .replace("RPM", "")
+            .replace("L/100km", "")
+            .replace("L", "")
+            .replace("km", "")
+            .replace("Gear:", "")
+            .trim()
+            .toFloatOrNull() ?: 0f
+    }
+
     fun resetTripData() {
         totalDistance = 0.0
         totalFuelUsed = 0.0
