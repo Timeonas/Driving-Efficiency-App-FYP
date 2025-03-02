@@ -92,3 +92,6 @@
 - Create the trip summary screen for the drive activity
 - Implemented overview trip data
 - Foundation set for driving efficiency score
+- Extended Trip information now saved to Firestore
+- Detailed view of trip data now available
+- Added final todo's to the project

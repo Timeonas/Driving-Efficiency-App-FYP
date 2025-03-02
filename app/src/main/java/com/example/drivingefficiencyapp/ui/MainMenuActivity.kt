@@ -9,7 +9,6 @@ import com.example.drivingefficiencyapp.databinding.MainMenuActivityBinding
 import com.example.drivingefficiencyapp.obd.ObdConnectActivity
 import com.example.drivingefficiencyapp.obd.ObdConnectionManager
 import com.example.drivingefficiencyapp.profile.ProfileActivity
-import com.example.drivingefficiencyapp.trip.TripsActivity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

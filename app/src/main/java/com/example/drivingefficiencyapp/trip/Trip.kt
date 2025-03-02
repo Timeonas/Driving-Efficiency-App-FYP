@@ -2,7 +2,6 @@ package com.example.drivingefficiencyapp.trip
 
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
-import java.util.Date
 
 /**
  * Data class representing a trip with a date and duration.
@@ -18,5 +17,9 @@ data class Trip(
     val date: String = "",
     val duration: String = "",
     @ServerTimestamp
-    val timestamp: Date? = null
+    val timestamp: Long = 0L,
+    val averageSpeed: Float = 0f,
+    val distanceTraveled: Float = 0f,
+    val averageFuelConsumption: Float = 0f,
+    val fuelUsed: Float = 0f
 )
