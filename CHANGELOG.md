@@ -87,3 +87,6 @@
 - Removed instant fuel consumption, as its highly inaccurate using MAF calculations.
 - Start made on integrating obd activity into the main project
 - Moved instant obd data to the start drive activity
+
+## 2/3/25
+- Create the trip summary screen for the drive activity

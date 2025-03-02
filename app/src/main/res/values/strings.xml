@@ -58,4 +58,15 @@
     <string name="default_speed">- km/h</string>
     <string name="default_temp">- °C</string>
     <string name="default_gear">Gear: -</string>
+    <string name="trip_summary">Trip Summary</string>
+    <string name="efficiency_score">Efficiency Score</string>
+    <string name="trip_duration">Trip Duration</string>
+    <string name="avg_speed">Avg. Speed</string>
+    <string name="distance">Distance</string>
+    <string name="fuel_consumption">Fuel Consumption</string>
+    <string name="fuel_used">Fuel Used</string>
+    <string name="estimated_cost">Estimated Cost</string>
+    <string name="driving_feedback">Driving Feedback</string>
+    <string name="save_trip">Save Trip</string>
+    <string name="close">Close</string>
 </resources>
