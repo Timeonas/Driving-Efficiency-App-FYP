@@ -21,5 +21,7 @@ data class Trip(
     val averageSpeed: Float = 0f,
     val distanceTraveled: Float = 0f,
     val averageFuelConsumption: Float = 0f,
-    val fuelUsed: Float = 0f
+    val fuelUsed: Float = 0f,
+    val maxRPM: Int = 0,
+    val avgRPM: Float = 0f
 )

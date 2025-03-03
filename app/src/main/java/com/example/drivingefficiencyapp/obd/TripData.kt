@@ -7,6 +7,6 @@ data class TripData(
     val duration: Long = 0,
     val fuelUsed: Float = 0f,
     val averageFuelConsumption: Float = 0f,
-    val averageRpm: Float = 0f,
-    val maxRpm: Float = 0f
+    val avgRPM: Float = 0f,
+    val maxRPM: Int = 0
 )

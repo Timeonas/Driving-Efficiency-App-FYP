@@ -228,7 +228,9 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                     averageFuelConsumption = tripData.averageFuelConsumption,
                     fuelUsed = tripData.fuelUsed,
                     tripDuration = calculateDuration(),
-                    date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())
+                    date = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date()),
+                    maxRPM = tripData.maxRPM,
+                    avgRPM = tripData.avgRPM
                 )
 
                 withContext(Dispatchers.Main) {
@@ -247,7 +249,9 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                 averageFuelConsumption = 6.8f,
                 fuelUsed = 1.86f,
                 tripDuration = duration,
-                date = date
+                date = date,
+                maxRPM = 4230,
+                avgRPM = 2150.5f
             )
 
             callback(tripSummary)

@@ -6,5 +6,7 @@ data class TripSummary(
     val averageFuelConsumption: Float,
     val fuelUsed: Float,
     val tripDuration: String,
-    val date: String
+    val date: String,
+    val maxRPM: Int = 0,
+    val avgRPM: Float = 0f
 )

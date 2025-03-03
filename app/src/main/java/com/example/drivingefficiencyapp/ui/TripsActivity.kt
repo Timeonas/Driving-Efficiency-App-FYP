@@ -131,6 +131,8 @@ class TripsActivity : AppCompatActivity() {
             putExtra("distanceTraveled", trip.distanceTraveled)
             putExtra("averageFuelConsumption", trip.averageFuelConsumption)
             putExtra("fuelUsed", trip.fuelUsed)
+            putExtra("maxRPM", trip.maxRPM)
+            putExtra("avgRPM", trip.avgRPM)
         }
         startActivity(intent)
     }

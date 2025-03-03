@@ -30,7 +30,9 @@ class TripRepository {
             "distanceTraveled" to tripSummary.distanceTraveled,
             "averageFuelConsumption" to tripSummary.averageFuelConsumption,
             "fuelUsed" to tripSummary.fuelUsed,
-            "tripDuration" to tripSummary.tripDuration
+            "tripDuration" to tripSummary.tripDuration,
+            "maxRPM" to tripSummary.maxRPM,
+            "avgRPM" to tripSummary.avgRPM
         )
 
         db.collection("users")
@@ -70,7 +72,9 @@ class TripRepository {
                         averageSpeed = (data["averageSpeed"] as? Number)?.toFloat() ?: 0f,
                         distanceTraveled = (data["distanceTraveled"] as? Number)?.toFloat() ?: 0f,
                         averageFuelConsumption = (data["averageFuelConsumption"] as? Number)?.toFloat() ?: 0f,
-                        fuelUsed = (data["fuelUsed"] as? Number)?.toFloat() ?: 0f
+                        fuelUsed = (data["fuelUsed"] as? Number)?.toFloat() ?: 0f,
+                        maxRPM = (data["maxRPM"] as? Number)?.toInt() ?: 0,
+                        avgRPM = (data["avgRPM"] as? Number)?.toFloat() ?: 0f
                     )
                 }
                 continuation.resume(Result.success(trips))

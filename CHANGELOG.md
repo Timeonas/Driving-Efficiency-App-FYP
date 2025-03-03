@@ -95,3 +95,6 @@
 - Extended Trip information now saved to Firestore
 - Detailed view of trip data now available
 - Added final todo's to the project
+
+## 3/3/25
+- Added RPM stats to the trip summary screen

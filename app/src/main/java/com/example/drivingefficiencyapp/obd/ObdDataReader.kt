@@ -38,6 +38,10 @@ class ObdDataReader(
     private val smoothingFactor = 0.1
     private var smoothedFuelConsumption = 0.0
 
+    // RPM stats
+    private var rpmReadings = mutableListOf<Int>()
+    private var maxRPM = 0
+
     data class ObdData(
         val rpm: String = "- RPM",
         val speed: String = "- km/h",
@@ -74,6 +78,8 @@ class ObdDataReader(
 
                     currentRpm = rpmValue          // Update currentRpm
                     currentSpeed = speedValue      // Update currentSpeed
+
+                    onNewRpmValue(rpmValue)
 
                     if (firstIteration) {
                         firstIteration = false
@@ -288,6 +294,8 @@ class ObdDataReader(
             duration = System.currentTimeMillis() - tripStartTime,
             fuelUsed = parseFloat(currentData.fuelUsed),
             averageFuelConsumption = parseFloat(currentData.averageFuelConsumption),
+            avgRPM = calculateAvgRPM().toFloat(),
+            maxRPM = maxRPM
         )
     }
 
@@ -307,6 +315,24 @@ class ObdDataReader(
         totalFuelUsed = 0.0
         lastTimestamp = System.currentTimeMillis()
         tripStartTime = System.currentTimeMillis()
+        rpmReadings.clear()
+        maxRPM = 0
+    }
+
+    private fun onNewRpmValue(rpm: Int) {
+        // Store RPM reading
+        rpmReadings.add(rpm)
+
+        // Update max RPM if higher
+        if (rpm > maxRPM) {
+            maxRPM = rpm
+        }
+    }
+
+    // Calculate average RPM
+    private fun calculateAvgRPM(): Double {
+        if (rpmReadings.isEmpty()) return 0.0
+        return rpmReadings.average()
     }
 
     fun stopReading() {

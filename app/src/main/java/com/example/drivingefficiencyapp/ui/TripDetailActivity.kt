@@ -19,9 +19,11 @@ class TripDetailActivity : AppCompatActivity() {
         val distance = intent.getFloatExtra("distanceTraveled", 0f)
         val fuelConsumption = intent.getFloatExtra("averageFuelConsumption", 0f)
         val fuelUsed = intent.getFloatExtra("fuelUsed", 0f)
+        val maxRPM = intent.getIntExtra("maxRPM", 0)
+        val avgRPM = intent.getFloatExtra("avgRPM", 0f)
 
         // Set up views with data
-        setupViews(date, duration, averageSpeed, distance, fuelConsumption, fuelUsed)
+        setupViews(date, duration, averageSpeed, distance, fuelConsumption, fuelUsed, maxRPM, avgRPM)
 
         // Set up buttons
         findViewById<Button>(R.id.saveButton).visibility = android.view.View.GONE
@@ -35,8 +37,8 @@ class TripDetailActivity : AppCompatActivity() {
         summaryTitle.text = "Trip Details: $date"
 
         // Hide feedback section
-        findViewById<TextView>(R.id.feedbackTitle).visibility = android.view.View.GONE
-        findViewById<TextView>(R.id.feedbackText).visibility = android.view.View.GONE
+        findViewById<TextView>(R.id.feedbackTitle).visibility = android.view.View.VISIBLE
+        findViewById<TextView>(R.id.feedbackText).visibility = android.view.View.VISIBLE
     }
 
     private fun setupViews(
@@ -45,7 +47,9 @@ class TripDetailActivity : AppCompatActivity() {
         averageSpeed: Float,
         distance: Float,
         fuelConsumption: Float,
-        fuelUsed: Float
+        fuelUsed: Float,
+        maxRPM: Int,
+        avgRPM: Float
     ) {
         // Find all TextViews
         findViewById<TextView>(R.id.tripDurationText).text = duration
@@ -58,6 +62,16 @@ class TripDetailActivity : AppCompatActivity() {
         val fuelPrice = 1.75 // Default price per liter in Euro
         val estimatedCost = fuelUsed * fuelPrice
         findViewById<TextView>(R.id.estimatedCostText).text = getString(R.string.estimated_cost_format, estimatedCost)
+
+        val rpmInfoText = "Max RPM: $maxRPM | Avg RPM: ${formatFloat(avgRPM)}"
+        findViewById<TextView>(R.id.feedbackText).apply {
+            visibility = android.view.View.VISIBLE
+            text = rpmInfoText
+        }
+        findViewById<TextView>(R.id.feedbackTitle).apply {
+            visibility = android.view.View.VISIBLE
+            text = "Engine Performance"
+        }
 
         // Hide efficiency score
         findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.scoreContainer).visibility = android.view.View.GONE
