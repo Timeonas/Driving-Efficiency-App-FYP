@@ -244,14 +244,14 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
             // Create a TripSummary with estimated data
             val tripSummary = TripSummary(
-                averageSpeed = 20.5f,
-                distanceTraveled = 27.3f,
-                averageFuelConsumption = 16.8f,
+                averageSpeed = 80.0f,
+                distanceTraveled = 100.3f,
+                averageFuelConsumption = 4.8f,
                 fuelUsed = 1.86f,
                 tripDuration = duration,
                 date = date,
-                maxRPM = 5000,
-                avgRPM = 3000.5f
+                maxRPM = 2100,
+                avgRPM = 1600.5f
             )
 
             callback(tripSummary)

@@ -17,8 +17,8 @@ class EfficiencyCalculator {
         // Thresholds for ideal driving - stricter parameters
         private const val OPTIMAL_AVG_SPEED_MIN = 55f // km/h - city/highway mix
         private const val OPTIMAL_AVG_SPEED_MAX = 75f // km/h
-        private const val OPTIMAL_MAX_RPM = 2200 // RPM - lower optimal RPM
-        private const val OPTIMAL_AVG_RPM = 1500f // RPM - lower optimal RPM
+        private const val OPTIMAL_MAX_RPM = 2500 // RPM - lower optimal RPM
+        private const val OPTIMAL_AVG_RPM = 1600f // RPM - lower optimal RPM
         private const val EXCELLENT_FUEL_CONSUMPTION = 4.5f // L/100km - more demanding
         private const val POOR_FUEL_CONSUMPTION = 10.0f // L/100km - stricter threshold
 

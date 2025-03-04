@@ -1,5 +1,6 @@
 package com.example.drivingefficiencyapp.trip
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,6 +19,7 @@ class TripAdapter(
         val dateText: TextView = itemView.findViewById(R.id.tripDate)
         val durationText: TextView = itemView.findViewById(R.id.tripDuration)
         val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
+        val efficiencyScore: TextView = itemView.findViewById(R.id.efficiencyScore)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
@@ -38,6 +40,8 @@ class TripAdapter(
         durationInfo.append("\nDistance: ${String.format("%.1f", trip.distanceTraveled)} km")
         durationInfo.append("\nAvg Speed: ${String.format("%.1f", trip.averageSpeed)} km/h")
         durationInfo.append("\nFuel Economy: ${String.format("%.1f", trip.averageFuelConsumption)} L/100km")
+        durationInfo.append("\nMax RPM: ${trip.maxRPM}")
+        durationInfo.append("\nAvg RPM: ${String.format("%.1f", trip.avgRPM)}")
 
         holder.durationText.text = durationInfo.toString()
 
@@ -48,6 +52,11 @@ class TripAdapter(
         holder.itemView.setOnClickListener {
             onTripClicked(trip)
         }
+
+        // In your ViewHolder or bind method:
+        holder.efficiencyScore.text = trip.efficiencyScore.toString()
+        // Use the same getScoreColor method for consistent coloring
+        holder.efficiencyScore.setTextColor(getScoreColor(trip.efficiencyScore, holder.itemView.context))
     }
 
     override fun getItemCount() = trips.size
@@ -62,6 +71,15 @@ class TripAdapter(
         if (position in trips.indices) {
             trips.removeAt(position)
             notifyItemRemoved(position)
+        }
+    }
+
+    private fun getScoreColor(score: Int, context: Context): Int {
+        return when {
+            score >= 85 -> context.getColor(android.R.color.holo_green_dark)
+            score >= 70 -> context.getColor(android.R.color.holo_blue_dark)
+            score >= 50 -> context.getColor(android.R.color.holo_orange_dark)
+            else -> context.getColor(android.R.color.holo_red_dark)
         }
     }
 }

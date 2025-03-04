@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.drivingefficiencyapp.EfficiencyCalculator
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.trip.Trip
 import com.example.drivingefficiencyapp.trip.TripAdapter
@@ -82,6 +83,11 @@ class TripsActivity : AppCompatActivity() {
     private fun showTrips(trips: List<Trip>) {
         recyclerView.visibility = View.VISIBLE
         noTripsText.visibility = View.GONE
+
+        // Calculate efficiency scores for each trip
+        trips.forEach { trip ->
+            trip.efficiencyScore = EfficiencyCalculator.calculateEfficiencyScore(trip)
+        }
         adapter.updateTrips(trips)
     }
 
@@ -133,6 +139,7 @@ class TripsActivity : AppCompatActivity() {
             putExtra("fuelUsed", trip.fuelUsed)
             putExtra("maxRPM", trip.maxRPM)
             putExtra("avgRPM", trip.avgRPM)
+            putExtra("efficiencyScore", trip.efficiencyScore)
         }
         startActivity(intent)
     }

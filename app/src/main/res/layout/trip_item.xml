@@ -25,8 +25,8 @@
         <!-- Efficiency Score Container -->
         <FrameLayout
             android:id="@+id/efficiencyScoreContainer"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="55dp"
+            android:layout_height="55dp"
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toStartOf="@id/deleteButton"
             app:layout_constraintTop_toTopOf="parent">
@@ -45,7 +45,7 @@
                 android:layout_gravity="center"
                 android:text="85"
                 android:textColor="#0077CC"
-                android:textSize="16sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
         </FrameLayout>
 
