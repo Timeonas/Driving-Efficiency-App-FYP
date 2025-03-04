@@ -19,18 +19,71 @@
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintEnd_toStartOf="@id/efficiencyScoreContainer"
             app:layout_constraintTop_toTopOf="parent"/>
+
+        <!-- Efficiency Score Container -->
+        <FrameLayout
+            android:id="@+id/efficiencyScoreContainer"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <View
+                android:id="@+id/scoreBackground"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/circle_background"
+                android:backgroundTint="#E6F7FF" />
+
+            <TextView
+                android:id="@+id/efficiencyScore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="85"
+                android:textColor="#0077CC"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tripDuration"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textSize="16sp"
+            android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/deleteButton"
             app:layout_constraintTop_toBottomOf="@id/tripDate"/>
+
+        <TextView
+            android:id="@+id/tripDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tripDuration"/>
+
+        <TextView
+            android:id="@+id/tripSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tripDistance"/>
+
+        <TextView
+            android:id="@+id/tripFuelEconomy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tripSpeed"/>
 
         <ImageButton
             android:id="@+id/deleteButton"
@@ -41,7 +94,6 @@
             android:src="@drawable/ic_delete"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:tint="@android:color/darker_gray"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

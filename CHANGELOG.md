@@ -98,3 +98,4 @@
 
 ## 3/3/25
 - Added RPM stats to the trip summary screen
+- Added proper efficiency score calculation based on the speed,fuel and rpm

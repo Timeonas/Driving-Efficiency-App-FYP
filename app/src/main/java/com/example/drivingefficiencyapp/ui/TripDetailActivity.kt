@@ -1,9 +1,13 @@
 package com.example.drivingefficiencyapp.ui
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import com.example.drivingefficiencyapp.EfficiencyCalculator
 import com.example.drivingefficiencyapp.R
+import com.example.drivingefficiencyapp.trip.Trip
 
 class TripDetailActivity : AppCompatActivity() {
 
@@ -22,11 +26,27 @@ class TripDetailActivity : AppCompatActivity() {
         val maxRPM = intent.getIntExtra("maxRPM", 0)
         val avgRPM = intent.getFloatExtra("avgRPM", 0f)
 
+        // Create a Trip object for efficiency calculation
+        val trip = Trip(
+            date = date,
+            duration = duration,
+            averageSpeed = averageSpeed,
+            distanceTraveled = distance,
+            averageFuelConsumption = fuelConsumption,
+            fuelUsed = fuelUsed,
+            maxRPM = maxRPM,
+            avgRPM = avgRPM
+        )
+
+        // Calculate efficiency score and generate feedback using EfficiencyCalculator
+        val efficiencyScore = EfficiencyCalculator.calculateEfficiencyScore(trip)
+        val feedback = EfficiencyCalculator.generateFeedback(trip)
+
         // Set up views with data
-        setupViews(date, duration, averageSpeed, distance, fuelConsumption, fuelUsed, maxRPM, avgRPM)
+        setupViews(trip, efficiencyScore, feedback)
 
         // Set up buttons
-        findViewById<Button>(R.id.saveButton).visibility = android.view.View.GONE
+        findViewById<Button>(R.id.saveButton).visibility = View.GONE
 
         findViewById<Button>(R.id.dismissButton).setOnClickListener {
             finish()
@@ -35,46 +55,56 @@ class TripDetailActivity : AppCompatActivity() {
         // Set title
         val summaryTitle = findViewById<TextView>(R.id.summaryTitle)
         summaryTitle.text = "Trip Details: $date"
-
-        // Hide feedback section
-        findViewById<TextView>(R.id.feedbackTitle).visibility = android.view.View.VISIBLE
-        findViewById<TextView>(R.id.feedbackText).visibility = android.view.View.VISIBLE
     }
 
     private fun setupViews(
-        date: String,
-        duration: String,
-        averageSpeed: Float,
-        distance: Float,
-        fuelConsumption: Float,
-        fuelUsed: Float,
-        maxRPM: Int,
-        avgRPM: Float
+        trip: Trip,
+        efficiencyScore: Int,
+        feedback: String
     ) {
-        // Find all TextViews
-        findViewById<TextView>(R.id.tripDurationText).text = duration
-        findViewById<TextView>(R.id.avgSpeedText).text = "${formatFloat(averageSpeed)} km/h"
-        findViewById<TextView>(R.id.distanceText).text = "${formatFloat(distance)} km"
-        findViewById<TextView>(R.id.fuelConsumptionText).text = "${formatFloat(fuelConsumption)} L/100km"
-        findViewById<TextView>(R.id.fuelUsedText).text = "${formatFloat(fuelUsed)} L"
+        // Set efficiency score
+        val scoreContainer = findViewById<ConstraintLayout>(R.id.scoreContainer)
+        scoreContainer.visibility = View.VISIBLE
+
+        val scoreTextView = findViewById<TextView>(R.id.efficiencyScoreText)
+        scoreTextView.text = efficiencyScore.toString()
+        scoreTextView.setTextColor(getScoreColor(efficiencyScore))
+
+        // Find all TextViews and populate with trip data
+        findViewById<TextView>(R.id.tripDurationText).text = trip.duration
+        findViewById<TextView>(R.id.avgSpeedText).text = "${formatFloat(trip.averageSpeed)} km/h"
+        findViewById<TextView>(R.id.distanceText).text = "${formatFloat(trip.distanceTraveled)} km"
+        findViewById<TextView>(R.id.fuelConsumptionText).text = "${formatFloat(trip.averageFuelConsumption)} L/100km"
+        findViewById<TextView>(R.id.fuelUsedText).text = "${formatFloat(trip.fuelUsed)} L"
+        findViewById<TextView>(R.id.maxRpmText).text = "${trip.maxRPM}"
+        findViewById<TextView>(R.id.avgRpmText).text = formatFloat(trip.avgRPM)
 
         // Calculate cost (using a default fuel price)
         val fuelPrice = 1.75 // Default price per liter in Euro
-        val estimatedCost = fuelUsed * fuelPrice
+        val estimatedCost = trip.fuelUsed * fuelPrice
         findViewById<TextView>(R.id.estimatedCostText).text = getString(R.string.estimated_cost_format, estimatedCost)
 
-        val rpmInfoText = "Max RPM: $maxRPM | Avg RPM: ${formatFloat(avgRPM)}"
+        // Set feedback
         findViewById<TextView>(R.id.feedbackText).apply {
-            visibility = android.view.View.VISIBLE
-            text = rpmInfoText
+            visibility = View.VISIBLE
+            text = feedback
         }
         findViewById<TextView>(R.id.feedbackTitle).apply {
-            visibility = android.view.View.VISIBLE
-            text = "Engine Performance"
+            visibility = View.VISIBLE
+            text = "Driving Feedback"
         }
+    }
 
-        // Hide efficiency score
-        findViewById<androidx.constraintlayout.widget.ConstraintLayout>(R.id.scoreContainer).visibility = android.view.View.GONE
+    /**
+     * Returns a color based on the efficiency score
+     */
+    private fun getScoreColor(score: Int): Int {
+        return when {
+            score >= 85 -> getColor(android.R.color.holo_green_dark)
+            score >= 70 -> getColor(android.R.color.holo_blue_dark)
+            score >= 50 -> getColor(android.R.color.holo_orange_dark)
+            else -> getColor(android.R.color.holo_red_dark)
+        }
     }
 
     private fun formatFloat(value: Float): String {
