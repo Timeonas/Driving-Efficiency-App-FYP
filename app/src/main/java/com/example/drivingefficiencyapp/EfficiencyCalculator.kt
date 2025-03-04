@@ -2,6 +2,7 @@ package com.example.drivingefficiencyapp
 
 import com.example.drivingefficiencyapp.trip.Trip
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Utility class to calculate driving efficiency score based on various parameters
@@ -9,18 +10,25 @@ import kotlin.math.max
 class EfficiencyCalculator {
 
     companion object {
-        // Constants for scoring weights - adjusted to be stricter
+        // Constants for scoring weights
         private const val SPEED_WEIGHT = 0.30
         private const val RPM_WEIGHT = 0.35
         private const val FUEL_CONSUMPTION_WEIGHT = 0.35
 
-        // Thresholds for ideal driving - stricter parameters
+        // Thresholds for ideal driving
         private const val OPTIMAL_AVG_SPEED_MIN = 55f // km/h - city/highway mix
         private const val OPTIMAL_AVG_SPEED_MAX = 75f // km/h
-        private const val OPTIMAL_MAX_RPM = 2500 // RPM - lower optimal RPM
-        private const val OPTIMAL_AVG_RPM = 1600f // RPM - lower optimal RPM
-        private const val EXCELLENT_FUEL_CONSUMPTION = 4.5f // L/100km - more demanding
-        private const val POOR_FUEL_CONSUMPTION = 10.0f // L/100km - stricter threshold
+        private const val OPTIMAL_MAX_RPM = 2500 // RPM
+        private const val OPTIMAL_AVG_RPM = 1600f // RPM
+        private const val EXCELLENT_FUEL_CONSUMPTION = 4.5f // L/100km
+        private const val POOR_FUEL_CONSUMPTION = 10.0f // L/100km
+
+        // Maximum thresholds for worst scores
+        private const val WORST_AVG_SPEED_LOW = 25f // km/h
+        private const val WORST_AVG_SPEED_HIGH = 120f // km/h
+        private const val WORST_MAX_RPM = 4500 // RPM
+        private const val WORST_AVG_RPM = 3000f // RPM
+        private const val WORST_FUEL_CONSUMPTION = 16.0f // L/100km
 
         /**
          * Calculate the overall efficiency score based on trip data
@@ -43,40 +51,58 @@ class EfficiencyCalculator {
 
         /**
          * Calculate score based on average speed
-         * More strictly penalizes inefficient speeds
          */
         private fun calculateSpeedScore(avgSpeed: Float): Float {
             return when {
                 avgSpeed in OPTIMAL_AVG_SPEED_MIN..OPTIMAL_AVG_SPEED_MAX -> 100f
                 avgSpeed < OPTIMAL_AVG_SPEED_MIN -> {
-                    // More severe penalty for low speeds
-                    max(40f, 60f + (avgSpeed / OPTIMAL_AVG_SPEED_MIN) * 40f)
+                    if (avgSpeed <= WORST_AVG_SPEED_LOW) {
+                        // Very inefficient low speed
+                        10f
+                    } else {
+                        // Linear scaling between worst and optimal
+                        val range = OPTIMAL_AVG_SPEED_MIN - WORST_AVG_SPEED_LOW
+                        val position = avgSpeed - WORST_AVG_SPEED_LOW
+                        10f + (position / range) * 90f
+                    }
                 }
                 else -> {
-                    // More severe penalty for high speeds
-                    max(40f, 100f - ((avgSpeed - OPTIMAL_AVG_SPEED_MAX) / 15f) * 60f)
+                    if (avgSpeed >= WORST_AVG_SPEED_HIGH) {
+                        // Very inefficient high speed
+                        10f
+                    } else {
+                        // Linear scaling between optimal and worst
+                        val range = WORST_AVG_SPEED_HIGH - OPTIMAL_AVG_SPEED_MAX
+                        val position = avgSpeed - OPTIMAL_AVG_SPEED_MAX
+                        max(10f, 100f - (position / range) * 90f)
+                    }
                 }
             }
         }
 
         /**
          * Calculate score based on engine RPM
-         * More severely penalizes high RPM
          */
         private fun calculateRpmScore(maxRpm: Int, avgRpm: Float): Float {
             val maxRpmScore = when {
                 maxRpm <= OPTIMAL_MAX_RPM -> 100f
+                maxRpm >= WORST_MAX_RPM -> 10f
                 else -> {
-                    // Stricter penalty for high max RPM
-                    max(30f, 100f - ((maxRpm - OPTIMAL_MAX_RPM).toFloat() / 800f) * 70f)
+                    // Linear scaling between optimal and worst
+                    val range = WORST_MAX_RPM - OPTIMAL_MAX_RPM
+                    val position = maxRpm - OPTIMAL_MAX_RPM
+                    max(10f, 100f - (position.toFloat() / range) * 90f)
                 }
             }
 
             val avgRpmScore = when {
                 avgRpm <= OPTIMAL_AVG_RPM -> 100f
+                avgRpm >= WORST_AVG_RPM -> 10f
                 else -> {
-                    // Stricter penalty for high average RPM
-                    max(30f, 100f - ((avgRpm - OPTIMAL_AVG_RPM) / 600f) * 70f)
+                    // Linear scaling between optimal and worst
+                    val range = WORST_AVG_RPM - OPTIMAL_AVG_RPM
+                    val position = avgRpm - OPTIMAL_AVG_RPM
+                    max(10f, 100f - (position / range) * 90f)
                 }
             }
 
@@ -86,17 +112,23 @@ class EfficiencyCalculator {
 
         /**
          * Calculate score based on fuel consumption
-         * More severely penalizes high consumption
          */
         private fun calculateFuelScore(fuelConsumption: Float): Float {
             return when {
                 fuelConsumption <= EXCELLENT_FUEL_CONSUMPTION -> 100f
-                fuelConsumption >= POOR_FUEL_CONSUMPTION -> 30f // Lower minimum score
+                fuelConsumption >= WORST_FUEL_CONSUMPTION -> 10f
+                fuelConsumption >= POOR_FUEL_CONSUMPTION -> {
+                    // Linear scaling between poor and worst
+                    val range = WORST_FUEL_CONSUMPTION - POOR_FUEL_CONSUMPTION
+                    val position = fuelConsumption - POOR_FUEL_CONSUMPTION
+                    val ratio = position / range
+                    max(10f, 30f - (ratio * 20f))
+                }
                 else -> {
-                    // Steeper drop in score for higher consumption
-                    val ratio = (fuelConsumption - EXCELLENT_FUEL_CONSUMPTION) /
-                            (POOR_FUEL_CONSUMPTION - EXCELLENT_FUEL_CONSUMPTION)
-                    100f - (ratio * 70f)
+                    // Linear scaling between excellent and poor
+                    val range = POOR_FUEL_CONSUMPTION - EXCELLENT_FUEL_CONSUMPTION
+                    val position = fuelConsumption - EXCELLENT_FUEL_CONSUMPTION
+                    100f - (position / range) * 70f
                 }
             }
         }
@@ -108,10 +140,18 @@ class EfficiencyCalculator {
             val speedScore = calculateSpeedScore(trip.averageSpeed)
             val rpmScore = calculateRpmScore(trip.maxRPM, trip.avgRPM)
             val fuelScore = calculateFuelScore(trip.averageFuelConsumption)
+            val overallScore = (speedScore * SPEED_WEIGHT + rpmScore * RPM_WEIGHT + fuelScore * FUEL_CONSUMPTION_WEIGHT).toInt()
 
             val feedback = StringBuilder()
 
-            // Add positive feedback first
+            // Add appropriate feedback based on severity
+            if (overallScore < 30) {
+                feedback.append("Your driving efficiency is critically low. ")
+            } else if (overallScore < 50) {
+                feedback.append("Your driving shows significant inefficiencies. ")
+            }
+
+            // Add positive feedback first (if any)
             if (speedScore >= 85) {
                 feedback.append("Good job maintaining an efficient speed. ")
             }
@@ -125,7 +165,13 @@ class EfficiencyCalculator {
             }
 
             // Add improvement suggestions
-            if (speedScore < 85) {
+            if (speedScore < 60) {
+                if (trip.averageSpeed < OPTIMAL_AVG_SPEED_MIN) {
+                    feedback.append("Your average speed of ${trip.averageSpeed} km/h is too low, indicating frequent stops or traffic congestion. Try planning routes to avoid heavy traffic. ")
+                } else {
+                    feedback.append("Your average speed of ${trip.averageSpeed} km/h is inefficiently high. Reduce highway speed to around 70-80 km/h for better efficiency. ")
+                }
+            } else if (speedScore < 85) {
                 if (trip.averageSpeed < OPTIMAL_AVG_SPEED_MIN) {
                     feedback.append("Try to maintain a steadier speed and avoid stop-and-go traffic when possible. ")
                 } else {
@@ -133,17 +179,21 @@ class EfficiencyCalculator {
                 }
             }
 
-            if (rpmScore < 85) {
-                feedback.append("Try shifting earlier to keep RPM lower. Your engine is working too hard. ")
+            if (rpmScore < 60) {
+                feedback.append("Your engine RPM is far too high (max: ${trip.maxRPM}, avg: ${trip.avgRPM}). Shift up earlier and accelerate more gently. ")
+            } else if (rpmScore < 85) {
+                feedback.append("Try shifting earlier to keep RPM lower. Your engine is working harder than optimal. ")
             }
 
-            if (fuelScore < 85) {
-                feedback.append("Your fuel consumption is very high. Focus on smoother acceleration and consistent speeds. ")
+            if (fuelScore < 60) {
+                feedback.append("Your fuel consumption of ${trip.averageFuelConsumption} L/100km is extremely high. Focus on smoother acceleration, consistent speeds, and gentler braking. ")
+            } else if (fuelScore < 85) {
+                feedback.append("Your fuel consumption could be improved. Maintain steady speeds and anticipate traffic flow to reduce fuel usage. ")
             }
 
             // Add severity indicator for very poor scores
-            if ((speedScore + rpmScore + fuelScore) / 3 < 50) {
-                feedback.append("\n\nYour driving shows significant inefficiencies that are costing you money and increasing emissions.")
+            if (overallScore < 30) {
+                feedback.append("\n\nYour current driving style is significantly increasing fuel costs and emissions. Consider following eco-driving principles for substantial improvements.")
             }
 
             return feedback.toString().trim()

@@ -32,7 +32,8 @@ class TripRepository {
             "fuelUsed" to tripSummary.fuelUsed,
             "tripDuration" to tripSummary.tripDuration,
             "maxRPM" to tripSummary.maxRPM,
-            "avgRPM" to tripSummary.avgRPM
+            "avgRPM" to tripSummary.avgRPM,
+            "efficiencyScore" to tripSummary.efficiencyScore
         )
 
         db.collection("users")
@@ -74,7 +75,8 @@ class TripRepository {
                         averageFuelConsumption = (data["averageFuelConsumption"] as? Number)?.toFloat() ?: 0f,
                         fuelUsed = (data["fuelUsed"] as? Number)?.toFloat() ?: 0f,
                         maxRPM = (data["maxRPM"] as? Number)?.toInt() ?: 0,
-                        avgRPM = (data["avgRPM"] as? Number)?.toFloat() ?: 0f
+                        avgRPM = (data["avgRPM"] as? Number)?.toFloat() ?: 0f,
+                        efficiencyScore = (data["efficiencyScore"] as? Number)?.toInt() ?: 0
                     )
                 }
                 continuation.resume(Result.success(trips))

@@ -101,3 +101,7 @@
 - Added proper efficiency score calculation based on the speed,fuel and rpm
 - Added the score to the trip card screens
 - Added rpm info on the cards too
+
+## 4/3/25
+- Improved efficiency score calculation and fixed the post trip dialog screen
+- Score is now stored in the db

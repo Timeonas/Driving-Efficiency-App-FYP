@@ -8,5 +8,6 @@ data class TripSummary(
     val tripDuration: String,
     val date: String,
     val maxRPM: Int = 0,
-    val avgRPM: Float = 0f
+    val avgRPM: Float = 0f,
+    var efficiencyScore: Int = 0
 )

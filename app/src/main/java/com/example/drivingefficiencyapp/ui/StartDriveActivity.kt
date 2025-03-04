@@ -10,19 +10,23 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.*
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.drivingefficiencyapp.EfficiencyCalculator
 import com.example.drivingefficiencyapp.LocationService
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.databinding.StartDriveActivityBinding
 import com.example.drivingefficiencyapp.obd.ObdConnectionManager
 import com.example.drivingefficiencyapp.obd.ObdDataReader
+import com.example.drivingefficiencyapp.trip.Trip
 import com.example.drivingefficiencyapp.trip.TripRepository
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
@@ -244,14 +248,14 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
             // Create a TripSummary with estimated data
             val tripSummary = TripSummary(
-                averageSpeed = 80.0f,
+                averageSpeed = 15.0f,
                 distanceTraveled = 100.3f,
-                averageFuelConsumption = 4.8f,
+                averageFuelConsumption = 21.8f,
                 fuelUsed = 1.86f,
                 tripDuration = duration,
                 date = date,
-                maxRPM = 2100,
-                avgRPM = 1600.5f
+                maxRPM = 5500,
+                avgRPM = 2700.0f
             )
 
             callback(tripSummary)
@@ -287,6 +291,28 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
             .setView(dialogView)
             .setCancelable(false)
             .create()
+
+        dialogView.findViewById<TextView>(R.id.feedbackText).visibility = View.GONE
+        dialogView.findViewById<TextView>(R.id.feedbackTitle).visibility = View.GONE
+
+        val scoreTextView = dialogView.findViewById<TextView>(R.id.efficiencyScoreText)
+
+        val trip = Trip(
+            date = tripSummary.date,
+            duration = tripSummary.tripDuration,
+            averageSpeed = tripSummary.averageSpeed,
+            distanceTraveled = tripSummary.distanceTraveled,
+            averageFuelConsumption = tripSummary.averageFuelConsumption,
+            fuelUsed = tripSummary.fuelUsed,
+            maxRPM = tripSummary.maxRPM,
+            avgRPM = tripSummary.avgRPM
+        )
+
+        val efficiencyScore = EfficiencyCalculator.calculateEfficiencyScore(trip)
+        scoreTextView.setTextColor(getScoreColor(efficiencyScore))
+        scoreTextView.text = efficiencyScore.toString()
+
+        tripSummary.efficiencyScore = efficiencyScore
 
         // Set up button click listeners
         dialogView.findViewById<Button>(R.id.saveButton).setOnClickListener {
@@ -573,5 +599,13 @@ class StartDriveActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+    private fun getScoreColor(score: Int): Int {
+        return when {
+            score >= 85 -> getColor(android.R.color.holo_green_dark)
+            score >= 70 -> getColor(android.R.color.holo_blue_dark)
+            score >= 50 -> getColor(android.R.color.holo_orange_dark)
+            else -> getColor(android.R.color.holo_red_dark)
+        }
     }
 }
