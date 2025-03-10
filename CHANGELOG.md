@@ -105,3 +105,6 @@
 ## 4/3/25
 - Improved efficiency score calculation and fixed the post trip dialog screen
 - Score is now stored in the db
+
+## 10/3/25
+- Created a classification neural network model to classify a history of driving behaviour into specific categories 

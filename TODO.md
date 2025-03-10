@@ -1,18 +1,19 @@
-Driving Efficiency Score:
-- Implement a driving efficiency score, that takes into account the user's driving habits and gives them a score
-- Used the data in the trips to calculate the score
-- Explore ML models to predict the score
-
-Improvements:
+Improvements and Final Touches:
 - Fix the orientation, right now while driving the map is not oriented correctly for some reason
 - Fix Bluetooth functionality, sometimes it does not connect to the OBD2 device
 - Fix instant fuel rate, not accurate as of right now
+- Implement acceleration and deceleration data
 
-Appearance (To be done after core app is done):
+Appearance (To be done after core app is done if time permits):
 - Better App Logo
 - Improve the appearance of the app, with a better color scheme and more modern design
 - Add animations to the app, such as when a trip starts or ends
 - Come up with an app name
+
+~~Driving Efficiency Score~~:
+- ~~Implement a driving efficiency score, that takes into account the user's driving habits and gives them a score~~
+- ~~Used the data in the trips to calculate the score~~
+- ~~Explore ML models to predict the score~~
 
 Core App:
 - ~~Implement a map view to show the user's current location when drive starts~~

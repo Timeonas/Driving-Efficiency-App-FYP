@@ -2,6 +2,7 @@ package com.example.drivingefficiencyapp.trip
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -69,14 +70,14 @@ class TripRepository {
                         id = document.id,
                         date = data["date"] as? String ?: "",
                         duration = data["duration"] as? String ?: "",
-                        timestamp = (data["timestamp"] as? Long) ?: 0L,
+                        timestamp = (data["timestamp"] as? Timestamp) ?: Timestamp.now(),
                         averageSpeed = (data["averageSpeed"] as? Number)?.toFloat() ?: 0f,
                         distanceTraveled = (data["distanceTraveled"] as? Number)?.toFloat() ?: 0f,
                         averageFuelConsumption = (data["averageFuelConsumption"] as? Number)?.toFloat() ?: 0f,
                         fuelUsed = (data["fuelUsed"] as? Number)?.toFloat() ?: 0f,
                         maxRPM = (data["maxRPM"] as? Number)?.toInt() ?: 0,
                         avgRPM = (data["avgRPM"] as? Number)?.toFloat() ?: 0f,
-                        efficiencyScore = (data["efficiencyScore"] as? Number)?.toInt() ?: 0
+                        efficiencyScore = (data["efficiencyScore"] as? Number)?.toInt() ?: -1
                     )
                 }
                 continuation.resume(Result.success(trips))

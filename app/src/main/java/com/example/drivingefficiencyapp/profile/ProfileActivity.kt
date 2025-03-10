@@ -11,10 +11,15 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.example.drivingefficiencyapp.ML.DriverClassifierRule
 import com.example.drivingefficiencyapp.R
+import com.example.drivingefficiencyapp.ML.DriverClassifierML
 import com.example.drivingefficiencyapp.auth.LoginActivity
 import com.example.drivingefficiencyapp.databinding.ProfileActivityBinding
+import com.example.drivingefficiencyapp.trip.Trip
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
@@ -32,7 +37,9 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ProfileActivityBinding
     private lateinit var profileImageHandler: ProfileImageHandler
+    private lateinit var classifier: DriverClassifierML
     private val storage = FirebaseStorage.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,11 +47,23 @@ class ProfileActivity : AppCompatActivity() {
         setContentView(binding.root)
         supportActionBar?.hide()
 
+        // Initialize ML classifier with context
+        classifier = DriverClassifierML(this)
+
         auth = FirebaseAuth.getInstance()
         profileImageHandler = ProfileImageHandler(this)
 
         setupUI()
         loadProfileImage()
+
+        // Call updateDriverProfile when the activity is created
+        updateDriverProfile()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh driver profile when returning to the activity
+        updateDriverProfile()
     }
 
     private fun setupUI() {
@@ -144,5 +163,53 @@ class ProfileActivity : AppCompatActivity() {
                 binding.profileImage.setImageResource(R.drawable.ic_profile_default)
             }
         }
+    }
+
+    private fun updateDriverProfile() {
+        val userId = auth.currentUser?.uid ?: return
+
+        // Show loading state
+        binding.avgEfficiencyScoreText.text = "--"
+        binding.driverCategoryText.text = "Loading..."
+        binding.driverDescriptionText.text = ""
+        binding.driverFeedbackText.text = ""
+
+        firestore.collection("users").document(userId)
+            .collection("trips")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(10)
+            .get()
+            .addOnSuccessListener { documents ->
+                val trips = documents.mapNotNull { it.toObject(Trip::class.java) }
+
+                if (trips.size >= 3) {
+                    // Use ML classifier's classify method instead of rule-based classifyDriver
+                    val category = classifier.classify(trips)
+                    val avgScore = trips.map { it.efficiencyScore }.average().toInt()
+                    val lastTrip = trips.maxByOrNull { it.timestamp?.seconds ?: 0 }
+
+                    binding.avgEfficiencyScoreText.text = avgScore.toString()
+                    binding.driverCategoryText.text = category.label
+                    binding.driverDescriptionText.text = category.description
+
+                    if (lastTrip != null) {
+                        // We can still use the personalized feedback from DriverClassifier
+                        val ruleBasedClassifier = DriverClassifierRule()
+                        binding.driverFeedbackText.text =
+                            ruleBasedClassifier.getPersonalizedFeedback(category, lastTrip)
+                    }
+                } else {
+                    // Not enough trips
+                    binding.avgEfficiencyScoreText.text = "--"
+                    binding.driverCategoryText.text = getString(R.string.not_classified)
+                    binding.driverDescriptionText.text = getString(R.string.need_more_trips)
+                    binding.driverFeedbackText.text = ""
+                }
+            }
+            .addOnFailureListener {
+                // Error handling
+                binding.driverCategoryText.text = "Error loading trips"
+                binding.driverDescriptionText.text = ""
+            }
     }
 }

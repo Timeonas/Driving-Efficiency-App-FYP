@@ -1,7 +1,9 @@
 package com.example.drivingefficiencyapp.ui
 
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -15,6 +17,8 @@ import com.example.drivingefficiencyapp.trip.Trip
 import com.example.drivingefficiencyapp.trip.TripAdapter
 import com.example.drivingefficiencyapp.trip.TripRepository
 import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 class TripsActivity : AppCompatActivity() {
@@ -84,10 +88,21 @@ class TripsActivity : AppCompatActivity() {
         recyclerView.visibility = View.VISIBLE
         noTripsText.visibility = View.GONE
 
-        // Calculate efficiency scores for each trip
+        // Only calculate efficiency scores for trips that don't have one
         trips.forEach { trip ->
-            trip.efficiencyScore = EfficiencyCalculator.calculateEfficiencyScore(trip)
+            if (trip.efficiencyScore == -1) {
+                trip.efficiencyScore = EfficiencyCalculator.calculateEfficiencyScore(trip)
+
+                // Update the efficiency score in Firestore
+                val db = FirebaseFirestore.getInstance()
+                db.collection("users")
+                    .document(FirebaseAuth.getInstance().currentUser?.uid ?: "")
+                    .collection("trips")
+                    .document(trip.id)
+                    .update("efficiencyScore", trip.efficiencyScore)
+            }
         }
+
         adapter.updateTrips(trips)
     }
 
@@ -114,18 +129,12 @@ class TripsActivity : AppCompatActivity() {
 
             tripRepository.deleteTrip(trip.id)
                 .onSuccess {
-                    val position = adapter.trips.indexOf(trip)
-                    adapter.removeTrip(position)
-
-                    if (adapter.itemCount == 0) {
-                        showEmptyState()
-                    }
+                    loadTrips()
                 }
                 .onFailure {
                     showError("Failed to delete trip")
+                    showLoading(false)
                 }
-
-            showLoading(false)
         }
     }
 

@@ -70,4 +70,6 @@
     <string name="save_trip">Save Trip</string>
     <string name="close">Close</string>
     <string name="estimated_cost_format">€%.2f</string>
+    <string name="not_classified">Not Classified</string>
+    <string name="need_more_trips">Complete at least 3 trips to get your driver profile</string>
 </resources>
