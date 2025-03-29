@@ -2,8 +2,8 @@ package com.example.drivingefficiencyapp.modelLayer.obd
 
 class GearCalculator(
     wheelDiameter: Double = 0.6096,
-    private val finalDriveRatioI: Double = 3.68,  // For gears 1-4
-    private val finalDriveRatioII: Double = 2.92, // For gears 5-6
+    private val finalDriveRatioI: Double = 3.68,  //For gears 1-4
+    private val finalDriveRatioII: Double = 2.92, //For gears 5-6
     private val idleRpmUpperThreshold: Int = 1000,
     private val speedThreshold: Int = 3,
     private val rpmChangeThreshold: Int = 200,
@@ -25,26 +25,26 @@ class GearCalculator(
     private var neutralCounter = 0
 
     fun calculateGear(rpm: Int, speedKmh: Double): String {
-        // First check if engine is off
+        //check if engine is off
         if (rpm <= 0) return "-"
 
-        // Then check for neutral
+        //check for neutral
         if (isNeutral(rpm, speedKmh)) {
             return "N"
         } else {
             neutralCounter = 0 // Reset counter when not in neutral
         }
 
-        // If speed is 0 but engine is running, we're in neutral
+        //If speed is 0 but engine is running, in neutral
         if (speedKmh <= 0.0) return "N"
 
-        // Calculate theoretical speed for each gear
+        //calculate theoretical speed for each gear
         val gearSpeeds = gearRatios.mapValues { (gear, ratio) ->
             val finalDrive = if (gear <= 4) finalDriveRatioI else finalDriveRatioII
             (rpm * wheelCircumference * kmhConversionFactor) / (ratio * finalDrive * secondsPerMinute)
         }
 
-        // Find the gear with the closest calculated speed to actual speed
+        //find the gear with the closest calculated speed to actual speed
         val gear = gearSpeeds.entries.minByOrNull { (_, calculatedSpeed) ->
             Math.abs(calculatedSpeed - speedKmh)
         }?.key
@@ -52,7 +52,7 @@ class GearCalculator(
         lastRpm = rpm
         lastSpeed = speedKmh
 
-        return gear?.toString() ?: "N" // Return "N" if no gear is found
+        return gear?.toString() ?: "N" //return "N" if no gear is found
     }
     private fun isNeutral(rpm: Int, speedKmh: Double): Boolean {
         if (rpm in 600..idleRpmUpperThreshold && speedKmh < speedThreshold) {
@@ -62,7 +62,7 @@ class GearCalculator(
 
         val rpmDelta = Math.abs(rpm - lastRpm)
         val speedDelta = Math.abs(speedKmh - lastSpeed)
-        // Clutch-in scenario. Keep returning neutral
+        //clutch-in scenario. Keep returning neutral
         if (rpmDelta > rpmChangeThreshold && speedDelta < speedThreshold && speedKmh < speedThreshold) {
             neutralCounter++ // Keep incrementing to avoid flapping
             return true
