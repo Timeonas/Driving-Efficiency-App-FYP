@@ -1,7 +1,7 @@
 package com.example.drivingefficiencyapp
 
 import android.app.Application
-import com.example.drivingefficiencyapp.profile.ProfileImageCache
+import com.example.drivingefficiencyapp.viewLayer.profile.ProfileImageCache
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings

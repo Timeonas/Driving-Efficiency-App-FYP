@@ -71,4 +71,6 @@ dependencies {
 
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
 }
