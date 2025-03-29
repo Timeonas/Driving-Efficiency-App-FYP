@@ -20,14 +20,12 @@ import java.util.UUID
  */
 object ObdConnectionManager {
     private const val TAG = "ObdConnectionManager"
-    private const val OBD_MAC_ADDRESS = "66:1E:32:30:AF:15" // Replace with your OBD-II adapter's MAC address
-    private const val OBD_NAME = "OBDII" // Replace with your OBD2 device name
+    private const val OBD_MAC_ADDRESS = "66:1E:32:30:AF:15"
+    private const val OBD_NAME = "OBDII"
 
-    // Connection state
+    //Connection state
     private val _connectionState = MutableStateFlow(false)
     val connectionState: StateFlow<Boolean> = _connectionState
-
-    // Active socket
     private var obdSocket: BluetoothSocket? = null
     private var connectionJob: Job? = null
     private var dataReaderJob: Job? = null

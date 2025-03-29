@@ -232,11 +232,9 @@ class ObdDataReader(
                 return "- (No Data)"
             }
             if (cleanResponse.contains("ERROR") || cleanResponse.contains("CAN ERROR") || cleanResponse.startsWith("?")) {
-                return "- (Error)"
-            }
+                return "- (Error)"}
             if (cleanResponse.contains("SEARCHING")) { return "- (Searching...)" }
             if (cleanResponse.contains("BUS INIT")) { return "- (BUS INIT Error)" }
-
             val pid = command.substring(2)
             val pidIndex = cleanResponse.indexOf(pid, ignoreCase = true)
             if (pidIndex == -1) { return "- (Unexpected Response)" }
@@ -246,7 +244,7 @@ class ObdDataReader(
             Log.d("OBD_PARSER", "Cleaned: $command: $dataBytes")
 
             return when (command) {
-                "010C" -> { // RPM
+                "010C" -> { //RPM
                     if (dataBytes.length >= 4) {
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
@@ -254,28 +252,28 @@ class ObdDataReader(
                         "$rpm"
                     } else { "- (Invalid Data - Short)" }
                 }
-                "010D" -> { // Speed
+                "010D" -> { //speed
                     if (dataBytes.length >= 2) {
                         val speed = Integer.parseInt(dataBytes.substring(0, 2), 16).toDouble()
-                        // Calculate gear here
+                        //calculate gear the driver is in
                         currentGear = gearCalculator.calculateGear(currentRpm, speed).toIntOrNull() ?: 0
                         return "$speed"
                     } else {
                         "- (Invalid Data - Short)"
                     }
                 }
-                "0105" -> { // Coolant Temp
+                "0105" -> { //Coolant Temp
                     if (dataBytes.length >= 2) {
                         val temp = Integer.parseInt(dataBytes.substring(0, 2), 16) - 40
                         "$temp°C"  // Return only the numeric temperature
                     } else { "- (Invalid Data - Short)" }
                 }
-                "0110" -> { // MAF
+                "0110" -> { //MAF
                     if (dataBytes.length >= 4) {
                         val a = Integer.parseInt(dataBytes.substring(0, 2), 16)
                         val b = Integer.parseInt(dataBytes.substring(2, 4), 16)
                         val maf = ((256 * a) + b) / 100.0
-                        "$maf"  // Return only the numeric MAF value
+                        "$maf"  //Return only the numeric MAF value
                     } else { "- (Invalid Data - Short)" }
                 }
                 else -> "Unknown command: $command"

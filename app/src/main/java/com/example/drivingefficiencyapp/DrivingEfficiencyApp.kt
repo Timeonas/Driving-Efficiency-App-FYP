@@ -12,16 +12,16 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class DrivingEfficiencyApp : Application() {
-    // Create an application scope that will be canceled when the application is destroyed
+    //application scope
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize Firebase Auth early
+        // Firebase Auth
         FirebaseAuth.getInstance()
 
-        // Configure Firestore with persistent cache
+        // Firestore with persistent cache
         val settings = FirebaseFirestoreSettings.Builder()
             .setLocalCacheSettings(
                 PersistentCacheSettings.newBuilder()
@@ -31,7 +31,6 @@ class DrivingEfficiencyApp : Application() {
             .build()
 
         FirebaseFirestore.getInstance().firestoreSettings = settings
-
         // Preload profile image if user is logged in
         FirebaseAuth.getInstance().currentUser?.let {
             applicationScope.launch {
@@ -42,7 +41,7 @@ class DrivingEfficiencyApp : Application() {
 
     override fun onTerminate() {
         super.onTerminate()
-        // Clear any resources when the application is terminated
+        // clear any resources
         ProfileImageCache.clearCache()
     }
 }

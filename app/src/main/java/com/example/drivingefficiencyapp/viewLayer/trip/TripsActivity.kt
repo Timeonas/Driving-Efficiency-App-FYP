@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.drivingefficiencyapp.modelLayer.obd.EfficiencyCalculator
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.modelLayer.trip.Trip
-import com.example.drivingefficiencyapp.viewModel.TripViewModel
+import com.example.drivingefficiencyapp.viewModelLayer.TripViewModel
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore

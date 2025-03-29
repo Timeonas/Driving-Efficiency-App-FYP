@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.drivingefficiencyapp.modelLayer.obd.EfficiencyCalculator
 import com.example.drivingefficiencyapp.R
 import com.example.drivingefficiencyapp.modelLayer.trip.Trip
-import com.example.drivingefficiencyapp.viewModel.TripViewModel
+import com.example.drivingefficiencyapp.viewModelLayer.TripViewModel
 
 class TripDetailActivity : AppCompatActivity() {
     private lateinit var viewModel: TripViewModel

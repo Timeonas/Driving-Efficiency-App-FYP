@@ -1,4 +1,4 @@
-package com.example.drivingefficiencyapp.viewModel
+package com.example.drivingefficiencyapp.viewModelLayer
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -12,19 +12,13 @@ import kotlinx.coroutines.launch
 class TripViewModel : ViewModel() {
     private val tripRepository = TripRepository()
 
-    // LiveData for trips list
     private val _trips = MutableLiveData<List<Trip>>()
     val trips: LiveData<List<Trip>> = _trips
-
-    // Loading state
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
-
-    // Error state
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
-    // Selected trip for details view
     private val _selectedTrip = MutableLiveData<Trip>()
 
     fun loadTrips() {
@@ -34,10 +28,8 @@ class TripViewModel : ViewModel() {
         viewModelScope.launch {
             tripRepository.getTrips()
                 .onSuccess { tripsList ->
-                    // Process trips to ensure efficiency scores are calculated
+                    //process trips to ensure efficiency scores are calculated
                     processTrips(tripsList)
-
-                    // Sort trips by timestamp (newest first)
                     val sortedTrips = tripsList.sortedByDescending {
                         it.timestamp?.seconds ?: 0
                     }
@@ -54,11 +46,9 @@ class TripViewModel : ViewModel() {
 
     fun deleteTrip(tripId: String) {
         _isLoading.value = true
-
         viewModelScope.launch {
             tripRepository.deleteTrip(tripId)
                 .onSuccess {
-                    // Reload trips after deletion
                     loadTrips()
                 }
                 .onFailure { exception ->
