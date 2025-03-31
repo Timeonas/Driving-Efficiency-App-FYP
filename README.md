@@ -87,3 +87,5 @@ Tim Samoska
 Student ID: 21326923  
 University of Galway  
 School of Computer Science
+
+All rights reserved
